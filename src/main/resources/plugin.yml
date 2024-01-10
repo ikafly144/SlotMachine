@@ -1,0 +1,28 @@
+name: SlotMachine
+version: ${version}
+author: ikafly144
+main: net.sabafly.slotmachine.SlotMachine
+api-version: '1.20'
+load: POSTWORLD
+depend:
+  - maps
+  - Vault
+  - ProtocolLib
+
+permissions:
+  slotmachine.play:
+    description: "slot machine use"
+    default: true
+  slotmachine.purchase:
+    description: "slot machine purchase"
+    default: true
+  slotmachine.admin:
+    description: "slot machine admin"
+    default: op
+
+commands:
+  slotmachine:
+    description: "slot machine"
+    usage: "/slotmachine <arg>"
+    aliases:
+      - sm

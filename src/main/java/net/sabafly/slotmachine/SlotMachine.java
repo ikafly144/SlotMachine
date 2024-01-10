@@ -1,0 +1,136 @@
+package net.sabafly.slotmachine;
+
+import co.aikar.taskchain.BukkitTaskChainFactory;
+import co.aikar.taskchain.TaskChain;
+import co.aikar.taskchain.TaskChainFactory;
+import me.lucko.commodore.CommodoreProvider;
+import net.milkbowl.vault.economy.Economy;
+import net.sabafly.slotmachine.commands.CommodoreHandler;
+import net.sabafly.slotmachine.commands.SlotMachineCommand;
+import net.sabafly.slotmachine.configuration.Configurations;
+import net.sabafly.slotmachine.configuration.Transformations;
+import net.sabafly.slotmachine.game.slot.SlotManager;
+import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.spongepowered.configurate.CommentedConfigurationNode;
+import org.spongepowered.configurate.ConfigurateException;
+import org.spongepowered.configurate.loader.HeaderMode;
+import org.spongepowered.configurate.yaml.NodeStyle;
+import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Logger;
+
+public final class SlotMachine extends JavaPlugin {
+
+    private final Logger logger = getLogger();
+    private SlotManager slotManager;
+    private CommodoreHandler commodoreHandler;
+    private static Economy econ = null;
+    private static Configurations config = null;
+
+    @Override
+    public void onEnable() {
+        try {
+            reloadPluginConfig();
+        } catch (ConfigurateException e) {
+            logger.severe("failed to load config");
+            e.printStackTrace();
+            this.getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        logger.info(String.format("enabled (version %s)", getDescription().getVersion()));
+        if (!setupEconomy() ) {
+            logger.severe("disabled due to no Vault dependency found!");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        if (CommodoreProvider.isSupported()) {
+            this.commodoreHandler = new CommodoreHandler(this);
+            taskChainFactory = BukkitTaskChainFactory.create(this);
+            new SlotMachineCommand(this);
+
+            getServer().getPluginManager().registerEvents(new EventListener(this),this);
+
+            if (this.getServer().getPluginManager().getPlugin("maps")==null) {
+                this.getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+
+            try {
+                slotManager = new SlotManager(new File(getDataFolder(),"data"), this);
+            } catch (IOException e) {
+                e.printStackTrace();
+                this.getServer().getPluginManager().disablePlugin(this);
+                return;
+            }
+
+            getServer().getScheduler().runTaskAsynchronously(this, () -> slotManager.load());
+
+        }
+    }
+
+    @Override
+    public void onDisable() {
+
+        try {
+            slotManager.close();
+        } catch (Exception e) {
+            logger.warning("failed to save map");
+            logger.throwing(SlotManager.class.getName(), "close", e);
+        }
+
+        logger.info(String.format("disabled (version %s)", getDescription().getVersion()));
+    }
+
+    public CommodoreHandler commodoreHandler() { return commodoreHandler; }
+
+    public SlotManager getMapManager() { return slotManager; }
+
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        econ = rsp.getProvider();
+        return true;
+    }
+
+    private static TaskChainFactory taskChainFactory;
+    public static <T> TaskChain<T> newChain() {
+        return taskChainFactory.newChain();
+    }
+    public static <T> TaskChain<T> newSharedChain(String name) {
+        return taskChainFactory.newSharedChain(name);
+    }
+
+    public static Economy getEconomy() {
+        return econ;
+    }
+
+    public static Configurations getPluginConfig() {
+        return config;
+    }
+
+    public void reloadPluginConfig() throws ConfigurateException {
+        super.reloadConfig();
+        final YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
+                .path(new File(getPlugin().getDataFolder(), "config.yml").toPath())
+                .indent(2)
+                .headerMode(HeaderMode.PRESET)
+                .nodeStyle(NodeStyle.BLOCK)
+                .build();
+        CommentedConfigurationNode node = Transformations.updateNode(loader.load());
+        loader.save(node);
+        config = node.get(Configurations.class, new Configurations());
+    }
+
+    public static SlotMachine getPlugin() {
+        return JavaPlugin.getPlugin(SlotMachine.class);
+    }
+
+}

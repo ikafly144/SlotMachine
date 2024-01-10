@@ -1,0 +1,91 @@
+plugins {
+    id 'java'
+}
+
+plugins {
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+}
+
+plugins {
+    id("xyz.jpenilla.run-paper") version "2.2.2"
+}
+
+group = 'net.sabafly'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "papermc-repo"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+    maven {
+        name = "sonatype"
+        url = "https://oss.sonatype.org/content/groups/public/"
+    }
+    maven { url 'https://libraries.minecraft.net/' }
+    maven { url "https://repo.dmulloy2.net/repository/public/" }
+    maven { url "https://repo.aikar.co/content/groups/aikar/" }
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    compileOnly "io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT"
+    compileOnly 'dev.cerus.maps:common:3.8.1'
+    compileOnly 'dev.cerus.maps:plugin:3.8.1'
+    compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+    compileOnly "com.comphenix.protocol:ProtocolLib:5.2.0-SNAPSHOT"
+    implementation 'me.lucko:commodore:2.2'
+    implementation "co.aikar:taskchain-bukkit:3.7.2"
+    implementation "org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT"
+}
+
+def targetJavaVersion = 17
+java {
+    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
+    sourceCompatibility = javaVersion
+    targetCompatibility = javaVersion
+    if (JavaVersion.current() < javaVersion) {
+        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
+        options.release = targetJavaVersion
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+shadowJar {
+    dependencies {
+        exclude(dependency('com.mojang:brigadier'))
+    }
+
+    minimize()
+    relocate 'me.lucko.commodore', 'net.sabafly.slotmachine.commodore'
+    relocate 'co.aikar.taskchain', 'net.sabafly.slotmachine.taskchain'
+}
+
+tasks {
+    runServer {
+        downloadPlugins {
+            github("cerus", "maps", "3.8.3", "maps-plugin.jar")
+            github("MilkBowl", "Vault", "1.7.3", "Vault.jar")
+            url("https://api.spiget.org/v2/resources/71210/download")
+            url("https://ci.dmulloy2.net/job/ProtocolLib//lastBuild/artifact/build/libs/ProtocolLib.jar")
+        }
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        minecraftVersion("1.20.4")
+    }
+}

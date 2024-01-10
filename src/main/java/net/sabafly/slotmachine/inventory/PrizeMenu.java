@@ -1,0 +1,129 @@
+package net.sabafly.slotmachine.inventory;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.sabafly.slotmachine.SlotMachine;
+import net.sabafly.slotmachine.configuration.Configurations;
+import net.sabafly.slotmachine.game.slot.SlotRegistry;
+import org.bukkit.Material;
+import org.bukkit.entity.HumanEntity;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class PrizeMenu extends ParaInventory {
+    private int page;
+    private long medal;
+    public PrizeMenu(HumanEntity player, int page) {
+        super(SlotMachine.getPlugin(),54, Component.text("prize menu"));
+        this.page = page;
+        Long t = SlotMachine.getPlugin().getMapManager().removeMedalAll(player);
+        if (t == null) t = 0L;
+        this.medal = t;
+        update(getPlugin());
+    }
+
+    private void update(Plugin plugin) {
+        Inventory inventory = getInventory();
+
+        final ItemStack glass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
+        final ItemMeta glassMeta = glass.getItemMeta();
+        glassMeta.displayName(Component.text("レシートをここに投入"));
+        glassMeta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "ADD_MEDAL");
+        glass.setItemMeta(glassMeta);
+        for (int i = 0; i < 9; i++) {
+            inventory.setItem(i, glass.clone());
+            inventory.setItem(45 + i, glass.clone());
+        }
+
+        final int[] slot = {9};
+        Configurations config = SlotMachine.getPluginConfig();
+        final int maxPage = (int) Math.ceil(config.prize.customPrizes.size() / 45.0);
+        if (page > maxPage) page = maxPage;
+        if (page == 1) {
+            addPrize(SlotRegistry.PrizeItem.getLargeItem(), slot[0], config.prize.largePrice);
+            addPrize(SlotRegistry.PrizeItem.getMediumItem(), slot[0] + 1, config.prize.mediumPrice);
+            addPrize(SlotRegistry.PrizeItem.getSmallItem(), slot[0] + 2, config.prize.smallPrice);
+            slot[0] += 3;
+        }
+
+        if (!config.prize.customPrizes.isEmpty()) config.prize.customPrizes.stream().skip((page-1) * 45L).limit(45 - slot[0]).forEach(customPrize -> {
+            final ItemStack item = new ItemStack(customPrize.item);
+            final ItemMeta meta = item.getItemMeta();
+            if (customPrize.name != null) meta.displayName(MiniMessage.miniMessage().deserialize(customPrize.name));
+            if (customPrize.lore != null) meta.lore(customPrize.lore.lines().map(MiniMessage.miniMessage()::deserialize).toList());
+            if (customPrize.count > 1) item.setAmount(customPrize.count);
+            item.setItemMeta(meta);
+            if (item.getType() == Material.PLAYER_HEAD) {
+                final SkullMeta skullMeta = (SkullMeta) item.getItemMeta();
+                skullMeta.setOwningPlayer(plugin.getServer().getOfflinePlayer(customPrize.playerName));
+                item.setItemMeta(skullMeta);
+            }
+            addPrize(item, slot[0], customPrize.price);
+            slot[0]++;
+        });
+
+    }
+
+    private void addPrize(ItemStack item, int slot, int price) {
+        final ItemMeta meta = item.getItemMeta();
+        final ArrayList<Component> lore = new ArrayList<>();
+        lore.add(MiniMessage.miniMessage().deserialize("<gray>値段: <white>" + price + "枚"));
+        lore.add(MiniMessage.miniMessage().deserialize("<gray>所持枚数: <white>" + medal + "枚"));
+        lore.add(Component.empty());
+        if (meta.hasLore()) lore.addAll(meta.lore());
+        meta.lore(lore);
+
+        meta.getPersistentDataContainer().set(SlotRegistry.Key.PRICE, PersistentDataType.INTEGER, price);
+        meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "PURCHASE");
+
+        item.setItemMeta(meta);
+        final Inventory inventory = getInventory();
+        inventory.setItem(slot, item);
+    }
+
+    public ItemStack buyItem(@NotNull final ItemStack item) {
+        final ItemMeta meta = item.getItemMeta();
+        final List<Component> oldLore = meta.lore();
+        final ArrayList<Component> lore = new ArrayList<>();
+        if (oldLore != null && oldLore.size() > 3) oldLore.stream().skip(3).forEach(lore::add);
+        meta.lore(lore);
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    public boolean buy(@NotNull final ItemStack item) {
+        if (!item.hasItemMeta()) return false;
+        final ItemMeta meta = item.getItemMeta();
+        if (!meta.getPersistentDataContainer().has(SlotRegistry.Key.ACTION, PersistentDataType.STRING)) return false;
+        String action = meta.getPersistentDataContainer().get(SlotRegistry.Key.ACTION, PersistentDataType.STRING);
+        if (action == null || !action.equals("PURCHASE")) return false;
+        if (!meta.getPersistentDataContainer().has(SlotRegistry.Key.PRICE, PersistentDataType.INTEGER)) return false;
+        Integer price = meta.getPersistentDataContainer().get(SlotRegistry.Key.PRICE, PersistentDataType.INTEGER);
+        price = price == null ? 0 : price;
+        if (price > medal) return false;
+        setMedal(medal - price);
+        return true;
+    }
+
+    public void addMedal(long medal) {
+        setMedal(this.medal + medal);
+    }
+
+    public void setMedal(long medal) {
+        this.medal = medal;
+        update(getPlugin());
+    }
+
+    public void close(HumanEntity player) {
+        SlotMachine.getPlugin().getMapManager().addMedal(player, medal);
+        player.sendPlainMessage("現在の残高：" + medal + "枚");
+    }
+}
