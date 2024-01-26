@@ -26,6 +26,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
@@ -69,14 +70,20 @@ public class Slot extends ParaMachine {
         return settingId;
     }
 
-    // TODO: 実装
     public void cancelPlay() {
-        throw new UnsupportedOperationException("not implemented");
+        ram.bonusFlag = null;
+        end();
     }
 
-    // TODO: 実装
+    private void end() {
+        wheels.stop(Pos.LEFT, null);
+        wheels.stop(Pos.CENTER, null);
+        wheels.stop(Pos.RIGHT, null);
+        setStatus(Status.IDLE);
+    }
+
     public void nextFlag() {
-        throw new UnsupportedOperationException("not implemented");
+        ram.estFlag = Flag.values()[(ram.estFlag == null ? 0 : ram.estFlag.ordinal() + 1) % Flag.values().length];
     }
 
     public void nextSetting() {
@@ -84,10 +91,20 @@ public class Slot extends ParaMachine {
         if (this.settingId > SettingSet.SIZE) this.settingId = 1;
     }
 
+    public void stop(@NotNull Player player) {
+        if (ram.coin > 0) {
+            ItemStack ticket = SlotRegistry.getTicket(ram.coin);
+            player.updateInventory();
+            player.getInventory().addItem(ticket);
+            ram.coin = 0;
+        }
+        end();
+    }
+
     @ConfigSerializable
     public static class RamData {
         public long coin = 0L;
-        public int payOut = 0;
+        public long payOut = 0;
         public Flag estFlag = null;
         public long gameCount = 0;
         public int bonusCoinCount = 0;
@@ -201,7 +218,7 @@ public class Slot extends ParaMachine {
         images.add(new UIImage(0, 0, AssetImage.BASE.getImage(), 100));
         images.add(new UIImage(16, 16, wheels.getImage(tick), 101));
         images.add(new UIImage(0, 0, AssetImage.LIGHTING.getImage(), 102));
-        if (isBonusAnnounced()) images.add(new UIImage(0, 48, AssetImage.GOGO.getImage(), 103));
+        if (isBonusAnnounced()) images.add(new UIImage(0, 47, AssetImage.GOGO.getImage(), 103));
         return images;
     }
 
@@ -235,21 +252,24 @@ public class Slot extends ParaMachine {
         List<UIButton> buttons = new ArrayList<>();
         buttons.add(new UIButton(27, 64, 23, 14, (player, pos) -> {
             if (getStatus().isPlaying()) {
+                Song.CLICK_CHORD.play(getScreen().getLocation());
                 wheels.stop(Pos.LEFT, ram.estFlag);
             }
         }));
         buttons.add(new UIButton(52, 64, 23, 14, (player, pos) -> {
             if (getStatus().isPlaying()) {
+                Song.CLICK_CHORD.play(getScreen().getLocation());
                 wheels.stop(Pos.CENTER, ram.estFlag);
             }
         }));
         buttons.add(new UIButton(77, 64, 23, 14, (player, pos) -> {
             if (getStatus().isPlaying()) {
+                Song.CLICK_CHORD.play(getScreen().getLocation());
                 wheels.stop(Pos.RIGHT, ram.estFlag);
             }
         }));
         buttons.add(new UIButton(16, 66, 10, 10, (player, pos) -> {
-            if (getStatus() == Status.IDLE) {
+            if (getStatus() == Status.IDLE && ram.payOut < 1) {
                 try {
                     wheels.start();
                 } catch (Exception e) {
@@ -276,6 +296,40 @@ public class Slot extends ParaMachine {
                                 Component.text("手続きが完了しませんでした"),
                                 Component.newline(),
                                 Component.text("残高不足: " + SlotMachine.getEconomy().format(response.balance))
+                        )
+                );
+            }
+        }));
+        buttons.add(new UIButton(10, 73, 3, 3, (player, pos) -> {
+            this.stats.totalPayOut += this.ram.coin;
+            player.sendMessage(
+                    Component.text().append(
+                            Component.text("メダル払い出し"),
+                            Component.newline(),
+                            Component.text("総ゲーム数: " + ram.gameCount),
+                            Component.newline(),
+                            Component.text("総メダル数: " + ram.coin)
+                    )
+            );
+            this.stop(player);
+        }));
+        buttons.add(new UIButton(116, 46, 4, 4, (player, pos) -> {
+            if (MedalBank.canTakeMedal(player, SlotMachine.getPluginConfig().lend.count)) {
+                MedalBank.takeMedal(player, SlotMachine.getPluginConfig().lend.count);
+                this.ram.payOut += SlotMachine.getPluginConfig().lend.count;
+                player.sendMessage(
+                        Component.text().append(
+                                Component.text("貯メダルからメダルを引き出しました"),
+                                Component.newline(),
+                                Component.text("残高: " + MedalBank.getMedal(player))
+                        )
+                );
+            } else {
+                player.sendMessage(
+                        Component.text().color(TextColor.color(0xff0000)).append(
+                                Component.text("貯メダルが足りないか、今日の上限に達しています"),
+                                Component.newline(),
+                                Component.text("貯メダル: " + MedalBank.getMedal(player))
                         )
                 );
             }
@@ -341,6 +395,12 @@ public class Slot extends ParaMachine {
         int setting = node.node("setting_id").getInt();
         Slot slot = new Slot(wheelSet, settingSet, screen, stats, setting, uuid);
         slot.ram = node.node("ram").get(RamData.class, new RamData());
+        if (slot.isBonusNow()) {
+            String key = "sound" + ThreadLocalRandom.current().nextInt();
+            TaskChain<?> chain = SlotMachine.newSharedChain(key);
+            chain.async(slot.new BgmTask(key));
+            chain.execute();
+        }
         return slot;
     }
 
@@ -442,28 +502,11 @@ public class Slot extends ParaMachine {
         }
 
         public Flag getFlag(int left, int center, int right) {
-            for (Flag flag : Flag.values()) {
-                line:
-                for (Line line : Line.values()) {
-                    final Flag f = getLineFlag(getWheel(Pos.LEFT).getPattern(line.get(Pos.LEFT) + left), getWheel(Pos.CENTER).getPattern(line.get(Pos.CENTER) + center), getWheel(Pos.RIGHT).getPattern(line.get(Pos.RIGHT) + right));
-                    if (f == flag) {
-                        for (Pos pos : Pos.values()) {
-                            if (getWheel(pos).getPattern(line.get(pos)) == WheelPattern.CHERRY) continue line;
-                        }
-                        return flag;
-                    }
+            for (Line line : Line.values()) {
+                final Flag f = Flag.getFlag(getWheel(Pos.LEFT).getPattern(line.get(Pos.LEFT) + left), getWheel(Pos.CENTER).getPattern(line.get(Pos.CENTER) + center), getWheel(Pos.RIGHT).getPattern(line.get(Pos.RIGHT) + right));
+                if (f != null) {
+                    return f;
                 }
-            }
-            return null;
-        }
-
-        protected final Flag getLineFlag(WheelPattern... pattern) {
-            outer:
-            for (Flag flag : Flag.values()) {
-                for (int i = 0; i < flag.getWheelPatterns().length; i++) {
-                    if (pattern[i] != flag.getWheelPatterns()[i]) continue outer;
-                }
-                return flag;
             }
             return null;
         }
@@ -478,9 +521,11 @@ public class Slot extends ParaMachine {
                                 .anyMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
                             return i;
                     } else if (flag.getWheelPatterns().length == 3) {
+                        if (!Arrays.stream(wheel.getPatterns()).allMatch(wheelPattern -> (pos != Pos.LEFT || wheelPattern != WheelPattern.CHERRY)))
+                            continue;
                         switch (stoppedWheels()) {
                             case 0 -> {
-                                if (Arrays.stream(wheel.getPatterns()).skip(i).limit(3).anyMatch(wheelPattern -> wheelPattern == flag.getWheelPatterns()[pos.getIndex()] && wheelPattern != WheelPattern.CHERRY))
+                                if (Arrays.stream(wheel.getPatterns()).skip(i).limit(3).anyMatch(wheelPattern -> (wheelPattern == flag.getWheelPatterns()[pos.getIndex()])))
                                     return i;
                             }
                             case 1 -> {
@@ -545,7 +590,6 @@ public class Slot extends ParaMachine {
         }
 
         public void stop(Pos pos, Flag estFlag) {
-            Song.CLICK_CHORD.play(getScreen().getLocation());
             int stepCount = getStepCount(estFlag, pos);
             getWheel(pos).stop(stepCount);
             if (isStopped()) {
@@ -553,18 +597,18 @@ public class Slot extends ParaMachine {
                 this.highlightFlag = null;
                 setStatus(Status.IDLE);
                 Flag flag = this.getFlag();
+
+                if (!ram.bonusAnnounced && estFlag != null && estFlag.isBonus()) {
+                    announceBonus(estFlag);
+                }
+
+                if (flag == null) {
+                    Song.LOSE.play(screen.getLocation());
+                }
+
                 if (estFlag != null && flag != null) {
                     String key = "sound" + ThreadLocalRandom.current().nextInt();
                     TaskChain<?> chain = SlotMachine.newSharedChain(key);
-
-                    if (!ram.bonusAnnounced && estFlag.isBonus()) {
-                        ram.bonusAnnounced = true;
-                        new Song(List.of(
-                                new Song.Note(Sound.BLOCK_PISTON_CONTRACT, 1, 0, 1)
-                        )).play(screen.getLocation(), chain);
-                        estFlag.withoutCherry();
-                        return;
-                    }
 
                     if (flag == SlotRegistry.Flag.F_REPLAY) {
                         Song.REPLAY.play(screen.getLocation(), chain);
@@ -582,30 +626,45 @@ public class Slot extends ParaMachine {
                     highlightLine = this.getFlagLine(flag);
                     chain.execute();
 
+                    if (isBonusNow()) {
+                        ram.bonusCoinCount += estFlag.getCoin();
+                        if (ram.bonusCoinCount >= (ram.bonusFlag.isBigBonus() ? 280 : ram.bonusFlag.isRegularBonus() ? 98 : 0)) {
+                            ram.bonusFlag = null;
+                            ram.bonusCoinCount = 0;
+                            ram.bonusAnnounced = false;
+                        }
+                    }
+
                     if (flag.isBonus()) {
-                        if (estFlag.isBigBonus()) {
+                        TaskChain<?> c = SlotMachine.newSharedChain(key);
+                        if (flag.isBigBonus()) {
                             stats.totalBigBonusCount++;
 
-                            Song.BIG_WIN.play(screen.getLocation(), chain);
+                            Song.BIG_WIN.play(screen.getLocation(), c);
                         }
                         stats.totalBonusCount++;
                         ram.bonusAnnounced = false;
                         ram.bonusFlag = estFlag;
                         ram.bonusCoinCount = 0;
-                        TaskChain<?> c = SlotMachine.newSharedChain(key);
-                        Song.BIG_BGM.play(screen.getLocation(), c);
                         c.async(new BgmTask(key));
                         c.execute();
                         stats.totalBonusPayOut += estFlag.getCoin();
-
                     }
                 }
             }
         }
 
+        private void announceBonus(Flag estFlag) {
+            ram.bonusAnnounced = true;
+            new Song(List.of(
+                    new Song.Note(Sound.BLOCK_PISTON_CONTRACT, 1, 0, 1)
+            )).play(screen.getLocation());
+            estFlag.withoutCherry();
+        }
+
         private Line getFlagLine(Flag flag) {
             for (Line line : Line.values()) {
-                if (getLineFlag(getWheel(Pos.LEFT).getPattern(line.get(Pos.LEFT)), getWheel(Pos.CENTER).getPattern(line.get(Pos.CENTER)), getWheel(Pos.RIGHT).getPattern(line.get(Pos.RIGHT))) == flag) {
+                if (Flag.getFlag(getWheel(Pos.LEFT).getPattern(line.get(Pos.LEFT)), getWheel(Pos.CENTER).getPattern(line.get(Pos.CENTER)), getWheel(Pos.RIGHT).getPattern(line.get(Pos.RIGHT))) == flag) {
                     return line;
                 }
             }
@@ -624,7 +683,10 @@ public class Slot extends ParaMachine {
             ram.gameCount++;
             ram.replay = false;
             if (ram.estFlag == null || !ram.estFlag.isBonus())
-                ram.estFlag = Flag.genFlag(random, settings.get(settingId));
+                ram.estFlag = Flag.genFlag(random, isBonusNow() ? Setting.Bonus : settings.get(settingId));
+            if (!ram.bonusAnnounced && ram.estFlag != null && ram.estFlag.isBonus()) {
+                announceBonus(ram.estFlag);
+            }
             TaskChain<?> chain = SlotMachine.newChain();
             if (cooldown - tick > 0) chain.delay((int) (cooldown - tick));
             chain.async(() -> {

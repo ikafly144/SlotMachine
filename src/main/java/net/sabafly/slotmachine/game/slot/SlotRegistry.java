@@ -3,8 +3,6 @@ package net.sabafly.slotmachine.game.slot;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.sabafly.slotmachine.SlotMachine;
-import net.sabafly.slotmachine.game.Slot;
-import net.sabafly.slotmachine.song.Song;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -13,17 +11,15 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
-import org.eclipse.sisu.inject.Legacy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.random.RandomGenerator;
 
 import static net.sabafly.slotmachine.game.slot.SlotRegistry.WheelPattern.*;
@@ -161,21 +157,22 @@ public class SlotRegistry {
         }
     }
 
-    public record Setting(int big, int reg, int big_c, int reg_c, int cherry, int grape, int bell, int replay,
+    public record Setting(int big, int reg, int big_c, int reg_c, int bell, int cherry, int grape, int replay,
                           int clown) {
         public static Setting Debug = new Setting(0, 0, 32768, 32768, 0, 0, 0, 0, 0);
-        public static Setting Bonus = new Setting(0, 0, 0, 0, 1024, 32768, 16384, 8192, 8192);
+        public static Setting Bonus = new Setting(0, 0, 0, 0, 16384, 0, 32768, 8192, 8192);
     }
 
     public static class Wheel {
         final WheelPattern[] wheelPatterns;
         boolean isRunning = false;
-        int count = 0;
+        int count;
         final Pos pos;
 
         public Wheel(WheelPattern[] wheelPatterns, Pos pos) {
             this.wheelPatterns = wheelPatterns;
             this.pos = pos;
+            this.count = ThreadLocalRandom.current().nextInt(wheelPatterns.length);
         }
 
         public BufferedImage getImage(final int range) {
@@ -438,6 +435,7 @@ public class SlotRegistry {
             return null;
         }
 
+        @Deprecated
         public static final int[][] stopLines = {
                 {0, 0, 0},
                 {1, 1, 1},
@@ -448,6 +446,7 @@ public class SlotRegistry {
 
         boolean hasCherry = false;
 
+        @Deprecated
         public static boolean hasFlag(int left, int center, int right) {
             Flag flag = getFlag(left, center, right);
             return flag != null;
@@ -561,7 +560,7 @@ public class SlotRegistry {
 
     }
 
-    public static ItemStack getTicket(int coin) {
+    public static ItemStack getTicket(long coin) {
         ItemStack item = new ItemStack(Material.PAPER);
         ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text("引き換え用レシート"));
@@ -573,7 +572,7 @@ public class SlotRegistry {
                 MiniMessage.miniMessage().deserialize("<gray>当日のみ有効")
         ));
         meta.getPersistentDataContainer().set(Key.TYPE, PersistentDataType.STRING, "TICKET");
-        meta.getPersistentDataContainer().set(Key.COIN, PersistentDataType.INTEGER, coin);
+        meta.getPersistentDataContainer().set(Key.COIN, PersistentDataType.LONG, coin);
         meta.getPersistentDataContainer().set(Key.DATE, PersistentDataType.STRING, LocalDateTime.now().format(DateTimeFormatter.ISO_DATE));
         meta.getPersistentDataContainer().set(Key.UNIX_TIME, PersistentDataType.LONG, System.currentTimeMillis());
         item.setItemMeta(meta);

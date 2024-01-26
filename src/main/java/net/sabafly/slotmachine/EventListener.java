@@ -160,8 +160,7 @@ public class EventListener implements Listener {
                         // 三時間以内かどうか
                         if (unixTime + 60 * 60 * 3 < System.currentTimeMillis() / 1000) return;
                     }
-                    Integer coin =
-                    cursorMeta.getPersistentDataContainer().get(SlotRegistry.Key.COIN, PersistentDataType.INTEGER);
+                    Long coin = cursorMeta.getPersistentDataContainer().get(SlotRegistry.Key.COIN, PersistentDataType.LONG);
                     if (coin == null) return;
                     prizeMenu.addMedal(coin);
 

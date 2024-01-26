@@ -10,6 +10,7 @@ import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -18,7 +19,7 @@ import java.util.UUID;
 
 public class MedalBank {
     static Map<UUID, Long> medalMap = new HashMap<>();
-    static String lastTakeMedalDay = "";
+    static LocalDate lastTakeMedalDay = LocalDate.now();
     static Map<UUID, Long> medalTakeMap = new HashMap<>();
 
     public static void save() throws ConfigurateException {
@@ -54,7 +55,7 @@ public class MedalBank {
         }
     }
 
-    public static void takeMedal(HumanEntity player, Long medal) {
+    public static void takeMedal(HumanEntity player, long medal) {
         if (medalMap.containsKey(player.getUniqueId())) {
             medalMap.put(player.getUniqueId(), medalMap.get(player.getUniqueId()) - medal);
         } else {
@@ -70,10 +71,10 @@ public class MedalBank {
         medalMap.put(player.getUniqueId(), medal);
     }
 
-    public static boolean canTakeMedal(HumanEntity player, Long medal) {
-        if (!lastTakeMedalDay.equals(DateTimeFormatter.ofPattern("yyyy-MM-dd").format(LocalDateTime.now()))) {
+    public static boolean canTakeMedal(HumanEntity player, long medal) {
+        if (!lastTakeMedalDay.equals(LocalDate.now())) {
             medalTakeMap.clear();
-            lastTakeMedalDay = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            lastTakeMedalDay = LocalDate.now();
         }
         long m = getMedal(player);
         if (m < medal) return false;

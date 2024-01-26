@@ -413,7 +413,7 @@ public class SlotEntity implements Runnable {
                         estFlag = SlotRegistry.Flag.genFlag(rng, SlotRegistry.LegacySetting.BONUS);
                     } else {
                         if (estFlag == null || !estFlag.isBonus()) estFlag = SlotRegistry.Flag.genFlag(rng, setting);
-                        if (estFlag != null && estFlag.isEarlyAnnounce()) announced = true;
+                        if (estFlag.isEarlyAnnounce()) announced = true;
                     }
                     for (ReelPos pos : ReelPos.values()) {
                         getReel(pos).start();
@@ -840,7 +840,7 @@ public class SlotEntity implements Runnable {
                     player.sendMessage(c);
                     plugin.getComponentLogger().info(c.build());
                     this.totalPayIn += SlotMachine.getPluginConfig().lend.count;
-                    addCoin(SlotMachine.getPluginConfig().lend.count);
+                    addCoin((int) SlotMachine.getPluginConfig().lend.count);
                 } else {
                     player.sendMessage(
                         Component.text().color(TextColor.color(0xff0000)).append(
@@ -854,7 +854,7 @@ public class SlotEntity implements Runnable {
             case USE_SAVED -> {
                 if (manager.canTakeMedal(player, SlotMachine.getPluginConfig().lend.count)) {
                     manager.takeMedal(player, SlotMachine.getPluginConfig().lend.count);
-                    addCoin(SlotMachine.getPluginConfig().lend.count);
+                    addCoin((int) SlotMachine.getPluginConfig().lend.count);
                     player.sendMessage(
                         Component.text().append(
                             Component.text("貯メダルからメダルを引き出しました"),

@@ -150,6 +150,14 @@ public class Song {
             new Note(Sound.BLOCK_NOTE_BLOCK_PLING, 0.707107f, 4, 1f), // 24.mcfunction
             new Note(Sound.BLOCK_NOTE_BLOCK_PLING, 0.707107f, 4, 1f)  // 26.mcfunction
     ));
+    public static final Song LOSE = new Song(List.of(
+            new Note(Sound.BLOCK_NOTE_BLOCK_BASS, 0.707107f, 2, 1f), // 0.mcfunction
+            new Note(Sound.BLOCK_NOTE_BLOCK_BASS, 0.707107f, 2, 1f), // 2.mcfunction
+            new Note(Sound.BLOCK_NOTE_BLOCK_BASS, 0.707107f, 2, 1f), // 4.mcfunction
+            new Note(Sound.BLOCK_NOTE_BLOCK_BASS, 0.707107f, 2, 1f), // 6.mcfunction
+            new Note(Sound.BLOCK_NOTE_BLOCK_BASS, 0.707107f, 2, 1f), // 8.mcfunction
+            new Note(Sound.BLOCK_NOTE_BLOCK_BASS, 0.707107f, 2, 1f)  // 10.mcfunction
+    ));
 
     private final List<Note> notes = new LinkedList<>();
 

@@ -20,7 +20,7 @@ public class Configurations extends ConfigurationPart {
     @ConfigSerializable
     public static class Lend extends ConfigurationPart {
         public int price = 100;
-        public int count = 57;
+        public long count = 57;
         public int savedMedalMaxUsePerDay = 450;
 
         public Lend() {
