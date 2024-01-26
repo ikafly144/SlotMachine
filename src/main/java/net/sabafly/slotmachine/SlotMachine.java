@@ -21,7 +21,6 @@ import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.logging.Logger;
 
 public final class SlotMachine extends JavaPlugin {

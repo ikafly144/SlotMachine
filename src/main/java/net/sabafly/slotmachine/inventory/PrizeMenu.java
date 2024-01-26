@@ -14,7 +14,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 import org.geysermc.floodgate.api.FloodgateApi;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,10 +31,10 @@ public class PrizeMenu extends ParaInventory {
         Long t = MedalBank.removeMedalAll(player);
         if (t == null) t = 0L;
         this.medal = t;
-        update(getPlugin());
+        update();
     }
 
-    private void update(Plugin plugin) {
+    private void update() {
         Inventory inventory = getInventory();
 
         final ItemStack glass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
@@ -136,7 +135,7 @@ public class PrizeMenu extends ParaInventory {
 
     public void setMedal(long medal) {
         this.medal = medal;
-        update(getPlugin());
+        update();
     }
 
     public void close(HumanEntity player) {
