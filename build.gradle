@@ -70,7 +70,7 @@ processResources {
 }
 
 shadowJar {
-    archiveBaseName.set('SlotMachine')
+    archiveFileName.set("SlotMachine.jar")
 
     dependencies {
         exclude(dependency('com.mojang:brigadier'))
