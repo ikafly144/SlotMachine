@@ -5,7 +5,7 @@ os: linux
 dist: trusty
 jdk: openjdk17
 script:
-  - wget https://github.com/sormuras/bach/raw/master/install-jdk.sh
+  - wget https://raw.githubusercontent.com/codecentric/hikaku/master/install-jdk.sh
   - chmod +x $TRAVIS_BUILD_DIR/install-jdk.sh
   - export JAVA_HOME=$HOME/openjdk17
   - $TRAVIS_BUILD_DIR/install-jdk.sh -F 17 --target $JAVA_HOME
