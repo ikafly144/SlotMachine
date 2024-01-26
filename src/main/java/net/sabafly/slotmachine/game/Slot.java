@@ -314,14 +314,14 @@ public class Slot extends ParaMachine {
             this.stop(player);
         }));
         buttons.add(new UIButton(116, 46, 4, 4, (player, pos) -> {
-            if (MedalBank.canTakeMedal(player, SlotMachine.getPluginConfig().lend.count)) {
-                MedalBank.takeMedal(player, SlotMachine.getPluginConfig().lend.count);
+            if (MedalBank.canTakeMedal(player.getUniqueId(), SlotMachine.getPluginConfig().lend.count)) {
+                MedalBank.takeMedal(player.getUniqueId(), SlotMachine.getPluginConfig().lend.count);
                 this.ram.payOut += SlotMachine.getPluginConfig().lend.count;
                 player.sendMessage(
                         Component.text().append(
                                 Component.text("貯メダルからメダルを引き出しました"),
                                 Component.newline(),
-                                Component.text("残高: " + MedalBank.getMedal(player))
+                                Component.text("残高: " + MedalBank.getMedal(player.getUniqueId()))
                         )
                 );
             } else {
@@ -329,7 +329,7 @@ public class Slot extends ParaMachine {
                         Component.text().color(TextColor.color(0xff0000)).append(
                                 Component.text("貯メダルが足りないか、今日の上限に達しています"),
                                 Component.newline(),
-                                Component.text("貯メダル: " + MedalBank.getMedal(player))
+                                Component.text("貯メダル: " + MedalBank.getMedal(player.getUniqueId()))
                         )
                 );
             }

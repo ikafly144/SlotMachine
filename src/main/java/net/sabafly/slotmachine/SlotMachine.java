@@ -11,7 +11,6 @@ import net.sabafly.slotmachine.configuration.Configurations;
 import net.sabafly.slotmachine.configuration.Transformations;
 import net.sabafly.slotmachine.game.MedalBank;
 import net.sabafly.slotmachine.game.ScreenManager;
-import net.sabafly.slotmachine.game.slot.SlotManager;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -31,6 +30,7 @@ public final class SlotMachine extends JavaPlugin {
     private CommodoreHandler commodoreHandler;
     private static Economy econ = null;
     private static Configurations config = null;
+    private static boolean isFloodgate = false;
 
     @Override
     public void onEnable() {
@@ -60,6 +60,10 @@ public final class SlotMachine extends JavaPlugin {
             if (this.getServer().getPluginManager().getPlugin("maps")==null) {
                 this.getServer().getPluginManager().disablePlugin(this);
                 return;
+            }
+
+            if (this.getServer().getPluginManager().getPlugin("Floodgate") != null) {
+                isFloodgate = true;
             }
 
             newChain().delay(1).async(() -> {
@@ -129,6 +133,10 @@ public final class SlotMachine extends JavaPlugin {
 
     public static SlotMachine getPlugin() {
         return JavaPlugin.getPlugin(SlotMachine.class);
+    }
+
+    public static boolean isFloodgate() {
+        return isFloodgate;
     }
 
 }

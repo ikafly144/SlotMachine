@@ -3,7 +3,6 @@ package net.sabafly.slotmachine.game;
 import net.sabafly.slotmachine.SlotMachine;
 import net.sabafly.slotmachine.configuration.Medals;
 import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.Player;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.loader.HeaderMode;
 import org.spongepowered.configurate.yaml.NodeStyle;
@@ -11,8 +10,6 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -47,38 +44,38 @@ public class MedalBank {
     }
 
 
-    public static void addMedal(HumanEntity player, long medal) {
-        if (medalMap.containsKey(player.getUniqueId())) {
-            medalMap.put(player.getUniqueId(), medalMap.get(player.getUniqueId()) + medal);
+    public static void addMedal(UUID player, long medal) {
+        if (medalMap.containsKey(player)) {
+            medalMap.put(player, medalMap.get(player) + medal);
         } else {
-            medalMap.put(player.getUniqueId(), medal);
+            medalMap.put(player, medal);
         }
     }
 
-    public static void takeMedal(HumanEntity player, long medal) {
-        if (medalMap.containsKey(player.getUniqueId())) {
-            medalMap.put(player.getUniqueId(), medalMap.get(player.getUniqueId()) - medal);
+    public static void takeMedal(UUID player, long medal) {
+        if (medalMap.containsKey(player)) {
+            medalMap.put(player, medalMap.get(player) - medal);
         } else {
-            medalMap.put(player.getUniqueId(), -medal);
+            medalMap.put(player, -medal);
         }
     }
 
-    public static long getMedal(HumanEntity player) {
-        return medalMap.getOrDefault(player.getUniqueId(), 0L);
+    public static long getMedal(UUID player) {
+        return medalMap.getOrDefault(player, 0L);
     }
 
-    public static void setMedal(HumanEntity player, long medal) {
-        medalMap.put(player.getUniqueId(), medal);
+    public static void setMedal(UUID player, long medal) {
+        medalMap.put(player, medal);
     }
 
-    public static boolean canTakeMedal(HumanEntity player, long medal) {
+    public static boolean canTakeMedal(UUID player, long medal) {
         if (!lastTakeMedalDay.equals(LocalDate.now())) {
             medalTakeMap.clear();
             lastTakeMedalDay = LocalDate.now();
         }
         long m = getMedal(player);
         if (m < medal) return false;
-        Long p = medalTakeMap.getOrDefault(player.getUniqueId(), 0L);
+        Long p = medalTakeMap.getOrDefault(player, 0L);
         return p + medal < SlotMachine.getPluginConfig().lend.savedMedalMaxUsePerDay;
     }
 
@@ -86,11 +83,11 @@ public class MedalBank {
         return medalMap;
     }
 
-    public static void removeMedal(HumanEntity target, long amount) {
-        if (medalMap.containsKey(target.getUniqueId())) {
-            medalMap.put(target.getUniqueId(), medalMap.get(target.getUniqueId()) - amount);
+    public static void removeMedal(UUID target, long amount) {
+        if (medalMap.containsKey(target)) {
+            medalMap.put(target, medalMap.get(target) - amount);
         } else {
-            medalMap.put(target.getUniqueId(), -amount);
+            medalMap.put(target, -amount);
         }
     }
 

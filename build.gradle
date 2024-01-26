@@ -23,6 +23,9 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven {
+        url = uri("https://repo.opencollab.dev/main/")
+    }
     maven { url 'https://libraries.minecraft.net/' }
     maven { url "https://repo.dmulloy2.net/repository/public/" }
     maven { url "https://repo.aikar.co/content/groups/aikar/" }
@@ -35,6 +38,7 @@ dependencies {
     compileOnly 'dev.cerus.maps:plugin:3.8.1'
     compileOnly "com.github.MilkBowl:VaultAPI:1.7"
     compileOnly "com.comphenix.protocol:ProtocolLib:5.2.0-SNAPSHOT"
+    compileOnly 'org.geysermc.floodgate:api:2.2.2-SNAPSHOT'
     implementation 'me.lucko:commodore:2.2'
     implementation "co.aikar:taskchain-bukkit:3.7.2"
     implementation "org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT"

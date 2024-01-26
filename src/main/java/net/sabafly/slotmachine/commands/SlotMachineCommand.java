@@ -14,14 +14,18 @@ import net.sabafly.slotmachine.game.MedalBank;
 import net.sabafly.slotmachine.inventory.ExchangeMenu;
 import net.sabafly.slotmachine.inventory.PrizeMenu;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.geysermc.floodgate.api.FloodgateApi;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurateException;
 
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 
@@ -111,19 +115,26 @@ public class SlotMachineCommand extends ParaCommand {
                 return;
             }
 
+            UUID name = Bukkit.getOfflinePlayer(args[2]).getUniqueId();
+            if (SlotMachine.isFloodgate()) {
+                final String prefix = FloodgateApi.getInstance().getPlayerPrefix();
+                if (args.length == 3 && args[2].startsWith(prefix)) {
+                    try {
+                        name = FloodgateApi.getInstance().getUuidFor(args[2].substring(prefix.length())).get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        name = Bukkit.getOfflinePlayer(args[2]).getUniqueId();
+                    }
+                }
+            }
             switch (args[1].toLowerCase()) {
                 case "add" -> {
                     if (args.length != 4) {
                         sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
                         return;
                     }
-                    Player target = Bukkit.getPlayer(args[2]);
-                    if (target == null) {
-                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Player not found"));
-                        return;
-                    }
+                    OfflinePlayer target = Bukkit.getOfflinePlayer(name);
                     int amount = Integer.parseInt(args[3]);
-                    MedalBank.addMedal(target, amount);
+                    MedalBank.addMedal(target.getUniqueId(), amount);
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Added " + amount + " medals to " + target.getName()));
                 }
                 case "remove" -> {
@@ -131,13 +142,9 @@ public class SlotMachineCommand extends ParaCommand {
                         sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
                         return;
                     }
-                    Player target = Bukkit.getPlayer(args[2]);
-                    if (target == null) {
-                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Player not found"));
-                        return;
-                    }
+                    OfflinePlayer target = Bukkit.getOfflinePlayer(name);
                     int amount = Integer.parseInt(args[3]);
-                    MedalBank.removeMedal(target, amount);
+                    MedalBank.removeMedal(target.getUniqueId(), amount);
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Removed " + amount + " medals from " + target.getName()));
                 }
                 case "set" -> {
@@ -145,13 +152,9 @@ public class SlotMachineCommand extends ParaCommand {
                         sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
                         return;
                     }
-                    Player target = Bukkit.getPlayer(args[2]);
-                    if (target == null) {
-                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Player not found"));
-                        return;
-                    }
+                    OfflinePlayer target = Bukkit.getOfflinePlayer(name);
                     int amount = Integer.parseInt(args[3]);
-                    MedalBank.setMedal(target, amount);
+                    MedalBank.setMedal(target.getUniqueId(), amount);
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Set " + target.getName() + "'s medals to " + amount));
                 }
                 case "get" -> {
@@ -159,25 +162,13 @@ public class SlotMachineCommand extends ParaCommand {
                         sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
                         return;
                     }
-                    Player target = Bukkit.getPlayer(args[2]);
-                    if (target == null) {
-                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Player not found"));
-                        return;
-                    }
-                    long amount = MedalBank.getMedal(target);
+                    OfflinePlayer target = Bukkit.getOfflinePlayer(name);
+                    long amount = MedalBank.getMedal(target.getUniqueId());
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>" + target.getName() + "'s medals: " + amount));
                 }
                 case "list" -> {
-                    if (args.length != 2) {
-                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
-                        return;
-                    }
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Medal list"));
-                    MedalBank.getMedalMap().forEach((uuid, amount) -> {
-                        Player target = Bukkit.getPlayer(uuid);
-                        if (target == null) return;
-                        sender.sendMessage(MiniMessage.miniMessage().deserialize("  <white>" + target.getName() + "'s medals: " + amount));
-                    });
+                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
+                    return;
                 }
             }
             return;
@@ -205,14 +196,14 @@ public class SlotMachineCommand extends ParaCommand {
 
     @Override
     public @Nullable List<String> onTabComplete(final @NotNull CommandSender sender, final @NotNull Command command, final @NotNull String label, final @NotNull String[] args) {
-        Player player = null;
-        if (sender instanceof Player) player = (Player) sender;
-        final boolean isPlayer = player != null;
+        boolean isPlayer = sender instanceof Player;
 
-        if (args.length == 1 && !isPlayer) return List.of("help", "reload");
-
-        if (args.length == 2 && args[0].equalsIgnoreCase("test")) return List.of("false", "true");
-
+        if (args.length == 1 && !isPlayer) return List.of("reload", "medal", "rng");
+        if (args.length == 2 && !isPlayer) return List.of("add", "remove", "set", "get", "list");
+        if (args.length == 3 && args[1].equalsIgnoreCase("get")) return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+        if (args.length == 3 && args[1].equalsIgnoreCase("add")) return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+        if (args.length == 3 && args[1].equalsIgnoreCase("remove")) return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+        if (args.length == 3 && args[1].equalsIgnoreCase("set")) return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
         return List.of();
     }
 

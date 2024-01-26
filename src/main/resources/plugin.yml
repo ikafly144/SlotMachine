@@ -4,6 +4,8 @@ author: ikafly144
 main: net.sabafly.slotmachine.SlotMachine
 api-version: '1.20'
 load: POSTWORLD
+softdepend:
+  - Floodgate
 depend:
   - maps
   - Vault

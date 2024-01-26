@@ -6,6 +6,7 @@ import net.sabafly.slotmachine.SlotMachine;
 import net.sabafly.slotmachine.configuration.Configurations;
 import net.sabafly.slotmachine.game.MedalBank;
 import net.sabafly.slotmachine.game.slot.SlotRegistry;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.Inventory;
@@ -14,10 +15,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.geysermc.floodgate.api.FloodgateApi;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 public class PrizeMenu extends ParaInventory {
     private int page;
@@ -64,7 +68,19 @@ public class PrizeMenu extends ParaInventory {
             item.setItemMeta(meta);
             if (item.getType() == Material.PLAYER_HEAD) {
                 final SkullMeta skullMeta = (SkullMeta) item.getItemMeta();
-                skullMeta.setOwningPlayer(plugin.getServer().getOfflinePlayer(customPrize.playerName));
+                final String name = customPrize.playerName;
+                UUID uuid = Bukkit.getOfflinePlayer(name).getUniqueId();
+                if (SlotMachine.isFloodgate()) {
+                    final String prefix = FloodgateApi.getInstance().getPlayerPrefix();
+                    if (name.startsWith(prefix)) {
+                        try {
+                            uuid = FloodgateApi.getInstance().getUuidFor(name.substring(prefix.length())).get();
+                        } catch (InterruptedException | ExecutionException e) {
+                            uuid = Bukkit.getOfflinePlayer(name).getUniqueId();
+                        }
+                    }
+                }
+                skullMeta.setOwningPlayer(Bukkit.getOfflinePlayer(uuid));
                 item.setItemMeta(skullMeta);
             }
             addPrize(item, slot[0], customPrize.price);
@@ -124,7 +140,7 @@ public class PrizeMenu extends ParaInventory {
     }
 
     public void close(HumanEntity player) {
-        MedalBank.addMedal(player, medal);
+        MedalBank.addMedal(player.getUniqueId(), medal);
         player.sendPlainMessage("現在の残高：" + medal + "枚");
     }
 }
