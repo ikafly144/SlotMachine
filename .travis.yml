@@ -5,8 +5,10 @@ os: linux
 dist: trusty
 jdk: openjdk17
 script:
-  - export PATH=$JAVA_HOME/bin:$PATH
-  - jdk_switcher use openjdk17
+  - wget https://raw.githubusercontent.com/sormuras/bach/d9aa8c6f2a4241d8121baefe186515fd3fbd6108/install-jdk.sh
+  - chmod +x $TRAVIS_BUILD_DIR/install-jdk.sh
+  - export JAVA_HOME=$HOME/openjdk17
+  - $TRAVIS_BUILD_DIR/install-jdk.sh -F 17 --target $JAVA_HOME
   - ./gradlew shadowJar --scan -s
 
 before_cache:
