@@ -45,6 +45,6 @@ jobs:
       if: success()
       with:
         name: SlotMachine
-        path: build/libs/SlotMachine-all.jar
+        path: build/libs/SlotMachine.jar
         if-no-files-found: error
           

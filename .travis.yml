@@ -2,7 +2,7 @@ language: java
 install: skip
 
 os: linux
-sudo: required
+root: required
 dist: trusty
 jdk:
   - oraclejdk17
