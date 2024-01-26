@@ -3,8 +3,10 @@ install: skip
 
 os: linux
 dist: trusty
-jdk: openjdk-17-jdk
+jdk: openjdk17
 script:
+  - export PATH=$JAVA_HOME/bin:$PATH
+  - jdk_switcher use openjdk17
   - ./gradlew shadowJar --scan -s
 
 before_cache:
