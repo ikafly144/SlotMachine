@@ -1,4 +1,10 @@
 language: java
-install: ./gradlew assemble
-jdk:
-  - openjdk17
+install: skip
+
+os: linux
+dist: trusty
+jdk: openjdk17
+
+script:
+  - ./gradlew build --scan -s
+  - ./gradlew shadowJar --scan -s
