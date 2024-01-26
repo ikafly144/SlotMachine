@@ -29,8 +29,6 @@ public abstract class ParaMachine implements Machine<ParaMachine> {
 
     @Override
     public void run() {
-        final MapGraphics<?, ?> graphics = getScreen().getGraphics();
-        graphics.fillComplete(ColorCache.rgbToMap(0, 0, 0));
         tick++;
     }
 
