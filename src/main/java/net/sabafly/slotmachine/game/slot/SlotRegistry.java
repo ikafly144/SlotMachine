@@ -3,6 +3,8 @@ package net.sabafly.slotmachine.game.slot;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.sabafly.slotmachine.SlotMachine;
+import net.sabafly.slotmachine.game.Slot;
+import net.sabafly.slotmachine.song.Song;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
@@ -11,6 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
+import org.eclipse.sisu.inject.Legacy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,368 +30,161 @@ import static net.sabafly.slotmachine.game.slot.SlotRegistry.WheelPattern.*;
 
 public class SlotRegistry {
 
-    public static final Wheels JUGGLER = new Wheels(
-            new WheelPattern[]{
-                    GRAPE,
-                    REPLAY,
-                    GRAPE,
-                    BAR,
-                    CHERRY,
-                    GRAPE,
-                    REPLAY,
-                    GRAPE,
-                    CLOWN,
-                    SEVEN,
-                    GRAPE,
-                    REPLAY,
-                    GRAPE,
-                    CHERRY,
-                    BAR,
-                    GRAPE,
-                    REPLAY,
-                    GRAPE,
-                    REPLAY,
-                    SEVEN,
-                    BELL,
-            },
-            new WheelPattern[]{
-                    CLOWN,
-                    CHERRY,
-                    GRAPE,
-                    BAR,
-                    REPLAY,
-                    CHERRY,
-                    GRAPE,
-                    BELL,
-                    REPLAY,
-                    CHERRY,
-                    GRAPE,
-                    BAR,
-                    REPLAY,
-                    CHERRY,
-                    GRAPE,
-                    BELL,
-                    REPLAY,
-                    CHERRY,
-                    GRAPE,
-                    SEVEN,
-                    REPLAY,
-            },
-            new WheelPattern[]{
-                    REPLAY,
-                    BELL,
-                    CLOWN,
-                    GRAPE,
-                    REPLAY,
-                    BELL,
-                    CLOWN,
-                    GRAPE,
-                    REPLAY,
-                    BELL,
-                    CLOWN,
-                    GRAPE,
-                    REPLAY,
-                    BELL,
-                    CLOWN,
-                    GRAPE,
-                    REPLAY,
-                    BELL,
-                    BAR,
-                    SEVEN,
-                    GRAPE,
-            }
-    );
-
-    public static class Wheels {
-
-        final Wheel[] patterns;
-        Line highlightLine;
-        Flag highlightFlag;
-
-        public Wheels(
-                final WheelPattern[] left,
-                final WheelPattern[] center,
-                final WheelPattern[] right
-                ) {
-            this.patterns = new Wheel[] {
-                    new Wheel(left, Pos.LEFT),
-                    new Wheel(center, Pos.CENTER),
-                    new Wheel(right, Pos.RIGHT)
-            };
-        }
-
-        public Wheel getWheel(final Pos pos) {
-            return patterns[pos.getIndex()];
-        }
-
-        public BufferedImage getImage(long tick) {
-                /*上から | 2 |
-                        | 1 |
-                        | 0 |*/
-            ArrayList<ArrayList<BufferedImage>> reelImages = new ArrayList<>();
-            for (Wheels.Pos pos : Wheels.Pos.values()) {
-                ArrayList<BufferedImage> images = new ArrayList<>();
-                if (getWheel(pos).isRunning() &&(tick+pos.getIndex())%2==1) images.add(getWheel(pos).getImage(3));
-                images.add(getWheel(pos).getImage(2));
-                images.add(getWheel(pos).getImage(1));
-                images.add(getWheel(pos).getImage(0));
-                reelImages.add(images);
-            }
-            final int width = AssetImage.ImageType.REEL_ICON.width;
-            final int height = AssetImage.ImageType.REEL_ICON.height;
-            final int length = reelImages.size();
-            BufferedImage combinedImage = new BufferedImage(width * length + length - 1, height * length + length - 1, BufferedImage.TYPE_INT_ARGB);
-            Graphics combinedGraphics = combinedImage.getGraphics();
-            boolean shadow = (tick/5)%2 == 0 && highlightFlag != null && highlightLine != null;
-            for (Wheels.Pos pos : Wheels.Pos.values()) {
-
-                ArrayList<BufferedImage> images = reelImages.get(pos.getIndex());
-
-                for (int i = 0; i < images.size(); i++) {
-                    int y = i * height + i;
-                    if (getWheel(pos).isRunning() &&(tick+i)%2==1) y-=height/2;
-                    combinedGraphics.drawImage(images.get(i), pos.getIndex() * width + pos.getIndex(), y, null);
-                    if (shadow && highlightLine.get(pos.getIndex()) == 2 - i && highlightFlag.getWheelPatterns().length > pos.getIndex())
-                        combinedGraphics.drawImage(AssetImage.SHADOW.getImage(), pos.getIndex() * width + pos.getIndex(), y, null);
+    public enum WheelSet {
+        JUGGLER(
+                new WheelPattern[]{
+                        GRAPE,
+                        REPLAY,
+                        GRAPE,
+                        BAR,
+                        CHERRY,
+                        GRAPE,
+                        REPLAY,
+                        GRAPE,
+                        CLOWN,
+                        SEVEN,
+                        GRAPE,
+                        REPLAY,
+                        GRAPE,
+                        CHERRY,
+                        BAR,
+                        GRAPE,
+                        REPLAY,
+                        GRAPE,
+                        REPLAY,
+                        SEVEN,
+                        BELL,
+                },
+                new WheelPattern[]{
+                        CLOWN,
+                        CHERRY,
+                        GRAPE,
+                        BAR,
+                        REPLAY,
+                        CHERRY,
+                        GRAPE,
+                        BELL,
+                        REPLAY,
+                        CHERRY,
+                        GRAPE,
+                        BAR,
+                        REPLAY,
+                        CHERRY,
+                        GRAPE,
+                        BELL,
+                        REPLAY,
+                        CHERRY,
+                        GRAPE,
+                        SEVEN,
+                        REPLAY,
+                },
+                new WheelPattern[]{
+                        REPLAY,
+                        BELL,
+                        CLOWN,
+                        GRAPE,
+                        REPLAY,
+                        BELL,
+                        CLOWN,
+                        GRAPE,
+                        REPLAY,
+                        BELL,
+                        CLOWN,
+                        GRAPE,
+                        REPLAY,
+                        BELL,
+                        CLOWN,
+                        GRAPE,
+                        REPLAY,
+                        BELL,
+                        BAR,
+                        SEVEN,
+                        GRAPE,
                 }
+        ),
+        ;
+        private final WheelPattern[] left;
+        private final WheelPattern[] center;
+        private final WheelPattern[] right;
 
-            }
-
-            combinedGraphics.dispose();
-
-            return  combinedImage;
+        WheelSet(WheelPattern[] left, WheelPattern[] center, WheelPattern[] right) {
+            this.left = left;
+            this.center = center;
+            this.right = right;
         }
 
-        public void step() {
-            for (Wheel wheel : this.patterns) {
-                wheel.step();
-            }
+        public WheelPattern[] getLeft() {
+            return left;
         }
 
-        public int stoppedWheels() {
-            int count = 0;
-            for (Wheel wheel : this.patterns) {
-                if (wheel.isStopped()) count++;
-            }
-            return count;
+        public WheelPattern[] getCenter() {
+            return center;
         }
 
-        private Wheel[] stoppedReels() {
-            ArrayList<Wheel> list = new ArrayList<>();
-            for (Pos pos : Pos.values()) {
-                if (isStopped(pos)) list.add(getWheel(pos));
-            }
-            return list.toArray(new Wheel[]{});
+        public WheelPattern[] getRight() {
+            return right;
+        }
+    }
+
+    public enum SettingSet {
+        JUGGLER(
+                new Setting(128, 96, 58, 48, 1839, 64, 8192, 8977, 64),
+                new Setting(169, 152, 58, 53, 1839, 64, 8192, 8977, 64),
+                new Setting(196, 164, 58, 60, 1839, 64, 8192, 8977, 64),
+                new Setting(221, 198, 60, 62, 1839, 64, 10886, 8977, 64),
+                new Setting(255, 245, 60, 76, 1839, 64, 10886, 8977, 64),
+                new Setting(255, 255, 60, 76, 1839, 64, 11338, 8977, 64)
+        );
+        public static final int SIZE = 6;
+
+        private final List<Setting> settings;
+
+        SettingSet(
+                Setting setting1,
+                Setting setting2,
+                Setting setting3,
+                Setting setting4,
+                Setting setting5,
+                Setting setting6
+        ) {
+            settings = new ArrayList<>();
+            settings.add(setting1);
+            settings.add(setting2);
+            settings.add(setting3);
+            settings.add(setting4);
+            settings.add(setting5);
+            settings.add(setting6);
         }
 
-        private boolean isStopped(Pos pos) {
-            return getWheel(pos).isStopped();
+        public Setting get(int setting) {
+            return settings.get(setting - 1);
         }
+    }
 
-        private Flag getFlagShifted(Pos pos, int shift) {
-            int left = getWheel(Pos.LEFT).getLength() + (pos == Pos.LEFT ? shift : 0);
-            int center = getWheel(Pos.CENTER).getLength() + (pos == Pos.CENTER ? shift : 0);
-            int right = getWheel(Pos.RIGHT).getLength() + (pos == Pos.RIGHT ? shift : 0);
-            return SlotRegistry.Flag.getFlag(left, center, right);
-        }
-
-        private int getStepCount(Flag flag, Wheels.Pos pos) {
-            Wheel wheel = getWheel(pos);
-            if (flag != null) {
-                for (int i = 0; i < wheel.getLength() - 2; i++) {
-                    if (flag.isCherry()) {
-                        if (pos == Pos.LEFT && getWheel(Pos.CENTER).isRunning() && getWheel(Pos.RIGHT).isRunning()) {
-                            if (flag.isBonus()) {
-                                if (Arrays.stream(wheel.getPatterns())
-                                        .skip(i)
-                                        .limit(3)
-                                        .anyMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
-                                    return i;
-                            } else {
-                                if (wheel.getPattern(i) == WheelPattern.CHERRY || wheel.getPattern(i + 2) == WheelPattern.CHERRY)
-                                    return i;
-                            }
-                        } else if (pos == Pos.CENTER && getWheel(Pos.LEFT).isStopped() && getWheel(Pos.RIGHT).isRunning()) {
-                            if (flag.isBonus()) {
-                                if (getWheel(Pos.LEFT).getPattern(0) == WheelPattern.CHERRY || getWheel(Pos.LEFT).getPattern(2) == WheelPattern.CHERRY
-                                        && Arrays.stream(wheel.getPatterns())
-                                        .skip(i)
-                                        .limit(3)
-                                        .noneMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
-                                    return i;
-                                else if (getWheel(Pos.LEFT).getPattern(1) == WheelPattern.CHERRY)
-                                    return i;
-                            } else {
-                                if (getWheel(Pos.LEFT).getPattern(0) == WheelPattern.CHERRY) {
-                                    if (Arrays.stream(wheel.getPatterns())
-                                            .skip(i)
-                                            .limit(2)
-                                            .anyMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
-                                        return i;
-                                } else if (getWheel(Pos.LEFT).getPattern(2) == WheelPattern.CHERRY) {
-                                    if (Arrays.stream(wheel.getPatterns())
-                                            .skip(i + 1)
-                                            .limit(2)
-                                            .anyMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
-                                        return i;
-                                }
-                            }
-                        } else {
-                            if (pos == Pos.LEFT && Arrays.stream(wheel.getPatterns())
-                                    .skip(i)
-                                    .limit(3)
-                                    .anyMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
-                                return i;
-                        }
-                    } else if (flag.getWheelPatterns().length == 3) {
-                        if (stoppedWheels() == 0 && (wheel.getPattern(i) == flag.getWheelPatterns()[pos.getIndex()] || wheel.getPattern(i + 1) == flag.getWheelPatterns()[pos.getIndex()] || wheel.getPattern(i + 2) == flag.getWheelPatterns()[pos.getIndex()])) {
-                            if (pos != Pos.LEFT)
-                                return i;
-                            else if (wheel.getPattern(i) != WheelPattern.CHERRY && wheel.getPattern(i + 1) != WheelPattern.CHERRY && wheel.getPattern(i + 2) != WheelPattern.CHERRY)
-                                return i;
-                        }
-                        if (stoppedWheels() == 1) {
-                            if (pos == Pos.LEFT && Arrays.stream(wheel.getPatterns())
-                                    .skip(i)
-                                    .limit(3)
-                                    .anyMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
-                                continue;
-                            Wheel[] stoppedWheels = stoppedReels();
-                            WheelPattern[] stoppedWheelPatterns = stoppedWheels[0].getPatterns();
-                            if (Arrays.stream(stoppedWheelPatterns)
-                                    .skip(i)
-                                    .limit(3)
-                                    .noneMatch(wheelPattern -> wheelPattern == flag.getWheelPatterns()[stoppedWheels[0].getPos().getIndex()]))
-                                continue;
-                            if (stoppedWheels[0].getPos() == Pos.CENTER) {
-                                final WheelPattern wheelPattern = flag.getWheelPatterns()[Pos.CENTER.getIndex()];
-                                if (stoppedWheelPatterns[1] == wheelPattern && (wheel.getPattern(i) == wheelPattern || wheel.getPattern(i + 2) == wheelPattern))
-                                    return i;
-                                else if (stoppedWheelPatterns[0] == wheelPattern && wheel.getPattern(i) == wheelPattern)
-                                    return i;
-                                else if (stoppedWheelPatterns[2] == wheelPattern && wheel.getPattern(i + 2) == wheelPattern)
-                                    return i;
-                            } else if (pos == Pos.CENTER) {
-                                final int j = stoppedWheels[0].getPos().getIndex();
-                                final WheelPattern wheelPattern = flag.getWheelPatterns()[j];
-                                if (stoppedWheelPatterns[1] == wheelPattern && wheel.getPattern(i + 1) == wheelPattern)
-                                    return i;
-                                else if (stoppedWheelPatterns[0] == wheelPattern && (wheel.getPattern(i) == wheelPattern || wheel.getPattern(i + 1) == wheelPattern))
-                                    return i;
-                                else if (stoppedWheelPatterns[2] == wheelPattern && (wheel.getPattern(i + 2) == wheelPattern || wheel.getPattern(i + 1) == wheelPattern))
-                                    return i;
-                            } else {
-                                final WheelPattern wheelPattern = flag.getWheelPatterns()[pos.getIndex()];
-                                if (stoppedWheelPatterns[1] == wheelPattern && wheel.getPattern(i + 1) == wheelPattern) return i;
-                                else if (stoppedWheelPatterns[0] == wheelPattern && (wheel.getPattern(i) == wheelPattern || wheel.getPattern(i + 2) == wheelPattern))
-                                    return i;
-                                else if (stoppedWheelPatterns[2] == wheelPattern && (wheel.getPattern(i) == wheelPattern || wheel.getPattern(i + 2) == wheelPattern))
-                                    return i;
-                            }
-                        }
-                        if (stoppedWheels() == 2) {
-                            if (pos == Pos.LEFT && wheel.getPattern(i) != WheelPattern.CHERRY && wheel.getPattern(i + 1) != WheelPattern.CHERRY && wheel.getPattern(i + 2) != WheelPattern.CHERRY)
-                                continue;
-                            for (int j = 0; j < wheel.getLength() - 2; j++) {
-                                Flag f = getFlagShifted(pos, j);
-                                if (f == flag) return j;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // はずれる処理
-            if (stoppedWheels() == 2){
-                for (int i = 0; i < wheel.getLength() - 2; i++) {
-                    Flag f = getFlagShifted(pos, i);
-                    if (f == null) return i;
-                }
-            } else {
-                for (int i = 0; i < wheel.getLength() - 2; i++) {
-                    if (pos != Pos.LEFT)
-                        return i;
-                    else if (Arrays.stream(wheel.getPatterns())
-                            .skip(i)
-                            .limit(3)
-                            .noneMatch(wheelPattern -> wheelPattern == SlotRegistry.WheelPattern.CHERRY))
-                        return i;
-                }
-            }
-            return 0;
-        }
-
-        public enum Pos {
-            LEFT,
-            CENTER,
-            RIGHT,
-            ;
-
-            public int getIndex() {
-                return this.ordinal();
-            }
-        }
-
-        public enum Line {
-            // スロットの揃うライン
-            TOP(0, 0, 0),
-            CENTER(1, 1, 1),
-            BOTTOM(2, 2, 2),
-            LEFT(0, 1, 2),
-            RIGHT(2, 1, 0),
-            ;
-            final int left;
-            final int center;
-            final int right;
-
-            Line(int left, int center, int right) {
-                this.left = left;
-                this.center = center;
-                this.right = right;
-            }
-
-            public int getLeft() {
-                return left;
-            }
-
-            public int getCenter() {
-                return center;
-            }
-
-            public int getRight() {
-                return right;
-            }
-
-            public int get(int i) {
-                return switch (i) {
-                    case 0 -> left;
-                    case 1 -> center;
-                    case 2 -> right;
-                    default -> -1;
-                };
-            }
-        }
-
+    public record Setting(int big, int reg, int big_c, int reg_c, int cherry, int grape, int bell, int replay,
+                          int clown) {
+        public static Setting Debug = new Setting(0, 0, 32768, 32768, 0, 0, 0, 0, 0);
+        public static Setting Bonus = new Setting(0, 0, 0, 0, 1024, 32768, 16384, 8192, 8192);
     }
 
     public static class Wheel {
         final WheelPattern[] wheelPatterns;
         boolean isRunning = false;
         int count = 0;
-        final Wheels.Pos pos;
+        final Pos pos;
 
-        private Wheel(WheelPattern[] wheelPatterns, Wheels.Pos pos) {
+        public Wheel(WheelPattern[] wheelPatterns, Pos pos) {
             this.wheelPatterns = wheelPatterns;
             this.pos = pos;
         }
 
-        private BufferedImage getImage( int range) {
-            return wheelPatterns[(count+range)% wheelPatterns.length].getImage().getImage();
+        public BufferedImage getImage(final int range) {
+            return getPattern(range).getImage();
         }
 
         public WheelPattern[] getPatterns() {
             ArrayList<SlotRegistry.WheelPattern> list = new ArrayList<>();
-            for (int i=0;i<7;i++) {
+            for (int i = 0; i < 7; i++) {
                 list.add(getPattern(i));
             }
             return list.toArray(new SlotRegistry.WheelPattern[]{});
@@ -402,11 +198,11 @@ public class SlotRegistry {
             return wheelPatterns.length;
         }
 
-        public Wheels.Pos getPos() {
+        public Pos getPos() {
             return pos;
         }
 
-        private boolean isRunning() {
+        public boolean isRunning() {
             return isRunning;
         }
 
@@ -418,8 +214,65 @@ public class SlotRegistry {
             if (isRunning()) count++;
         }
 
+        public void stop(int i) {
+            isRunning = false;
+            count += i;
+        }
+
+        public void start() {
+            isRunning = true;
+        }
+
+        public long getCount() {
+            return count;
+        }
     }
 
+    public enum Pos {
+        LEFT,
+        CENTER,
+        RIGHT,
+        ;
+
+        public int getIndex() {
+            return this.ordinal();
+        }
+    }
+
+    public enum Line {
+        // スロットの揃うライン
+        TOP(2, 2, 2),
+        CENTER(1, 1, 1),
+        BOTTOM(0, 0, 0),
+        LEFT(0, 1, 2),
+        RIGHT(2, 1, 0),
+        ;
+        final int left;
+        final int center;
+        final int right;
+
+        Line(int left, int center, int right) {
+            this.left = left;
+            this.center = center;
+            this.right = right;
+        }
+
+        public int get(Pos pos) {
+            return get(pos.getIndex());
+        }
+
+        public int get(int i) {
+            return switch (i) {
+                case 0 -> left;
+                case 1 -> center;
+                case 2 -> right;
+                default -> -1;
+            };
+        }
+
+    }
+
+    @Deprecated(forRemoval = true)
     public enum ReelSet {
         LEFT(new WheelPattern[]{
                 GRAPE,
@@ -469,30 +322,30 @@ public class SlotRegistry {
                         REPLAY,
                 }),
         RIGHT(new WheelPattern[]{
-            REPLAY,
-            BELL,
-            CLOWN,
-            GRAPE,
-            REPLAY,
-            BELL,
-            CLOWN,
-            GRAPE,
-            REPLAY,
-            BELL,
-            CLOWN,
-            GRAPE,
-            REPLAY,
-            BELL,
-            CLOWN,
-            GRAPE,
-            REPLAY,
-            BELL,
-            BAR,
-            SEVEN,
-            GRAPE,
-        })
-        ;
+                REPLAY,
+                BELL,
+                CLOWN,
+                GRAPE,
+                REPLAY,
+                BELL,
+                CLOWN,
+                GRAPE,
+                REPLAY,
+                BELL,
+                CLOWN,
+                GRAPE,
+                REPLAY,
+                BELL,
+                CLOWN,
+                GRAPE,
+                REPLAY,
+                BELL,
+                BAR,
+                SEVEN,
+                GRAPE,
+        });
         public final WheelPattern[] wheelPatterns;
+
         ReelSet(WheelPattern[] wheelPatterns) {
             this.wheelPatterns = wheelPatterns;
         }
@@ -515,8 +368,8 @@ public class SlotRegistry {
             this.image = image;
         }
 
-        public AssetImage getImage() {
-            return image;
+        public BufferedImage getImage() {
+            return image.getImage();
         }
 
     }
@@ -557,36 +410,40 @@ public class SlotRegistry {
             return null;
         }
 
+        public static Flag genFlag(final RandomGenerator rng, LegacySetting setting) {
+            throw new UnsupportedOperationException();
+        }
+
         @Nullable
         public static Flag genFlag(final RandomGenerator rng, Setting setting) {
             int i = rng.nextInt(65536);
-            i -= setting.BB;
+            i -= setting.big();
             if (i < 0) return F_BB.randomEarlyAnnounce(rng);
-            i -= setting.RB;
+            i -= setting.reg();
             if (i < 0) return F_RB.randomEarlyAnnounce(rng);
-            i -= setting.C_BB;
+            i -= setting.big_c();
             if (i < 0) return F_BB.withCherry();
-            i -= setting.C_RB;
+            i -= setting.reg_c();
             if (i < 0) return F_RB.withCherry();
-            i -= setting.cherry;
+            i -= setting.cherry();
             if (i < 0) return F_CHERRY;
-            i -= setting.bell;
+            i -= setting.bell();
             if (i < 0) return F_BELL;
-            i -= setting.grape;
+            i -= setting.grape();
             if (i < 0) return F_GRAPE;
-            i -= setting.replay;
+            i -= setting.replay();
             if (i < 0) return F_REPLAY;
-            i -= setting.clown;
+            i -= setting.clown();
             if (i < 0) return F_CLOWN;
             return null;
         }
 
-        public static final int [][] stopLines = {
-                {0,0,0},
-                {1,1,1},
-                {2,2,2},
-                {0,1,2},
-                {2,1,0},
+        public static final int[][] stopLines = {
+                {0, 0, 0},
+                {1, 1, 1},
+                {2, 2, 2},
+                {0, 1, 2},
+                {2, 1, 0},
         };
 
         boolean hasCherry = false;
@@ -596,11 +453,12 @@ public class SlotRegistry {
             return flag != null;
         }
 
+        @Deprecated
         public static Flag getFlag(int left, int center, int right) {
             for (int[] pattern : stopLines) {
-                WheelPattern leftWheelPattern = ReelSet.LEFT.wheelPatterns[(left+pattern[0])% ReelSet.LEFT.wheelPatterns.length];
-                WheelPattern centerWheelPattern = ReelSet.CENTER.wheelPatterns[(center+pattern[1])% ReelSet.CENTER.wheelPatterns.length];
-                WheelPattern rightWheelPattern = ReelSet.RIGHT.wheelPatterns[(right+pattern[2])% ReelSet.RIGHT.wheelPatterns.length];
+                WheelPattern leftWheelPattern = ReelSet.LEFT.wheelPatterns[(left + pattern[0]) % ReelSet.LEFT.wheelPatterns.length];
+                WheelPattern centerWheelPattern = ReelSet.CENTER.wheelPatterns[(center + pattern[1]) % ReelSet.CENTER.wheelPatterns.length];
+                WheelPattern rightWheelPattern = ReelSet.RIGHT.wheelPatterns[(right + pattern[2]) % ReelSet.RIGHT.wheelPatterns.length];
 
                 Flag flag = getFlag(leftWheelPattern, centerWheelPattern, rightWheelPattern);
                 if (flag != null) return flag;
@@ -608,6 +466,7 @@ public class SlotRegistry {
             return null;
         }
 
+        @Deprecated
         public static int[] getStopLine(int left, int center, int right) {
             for (int[] stopLine : stopLines) {
                 WheelPattern leftWheelPattern = ReelSet.LEFT.wheelPatterns[(left + stopLine[0]) % ReelSet.LEFT.wheelPatterns.length];
@@ -648,6 +507,7 @@ public class SlotRegistry {
         public WheelPattern[] getWheelPatterns() {
             return wheelPatterns;
         }
+
         public int getCoin() {
             return coin;
         }
@@ -657,7 +517,8 @@ public class SlotRegistry {
         }
     }
 
-    public enum Setting {
+    @Deprecated
+    public enum LegacySetting {
         SETTING_1(128, 96, 58, 48, 1839, 64, 8192, 8977, 64),
         SETTING_2(169, 152, 58, 53, 1839, 64, 8192, 8977, 64),
         SETTING_3(196, 164, 58, 60, 1839, 64, 8192, 8977, 64),
@@ -665,10 +526,11 @@ public class SlotRegistry {
         SETTING_5(255, 245, 60, 76, 1839, 64, 10886, 8977, 64),
         SETTING_6(255, 255, 60, 76, 1839, 64, 11338, 8977, 64),
         BONUS(0, 0, 0, 0, 0, 8192, 16384, 8192, 16384),
+        DEBUG(0, 0, 32768, 32768, 0, 0, 0, 0, 0),
         ;
 
-        public static Setting getSetting(int setting) {
-            return values()[(setting-1)%6];
+        public static LegacySetting getSetting(int setting) {
+            return values()[(setting - 1) % 6];
         }
 
         public final int BB;
@@ -681,7 +543,7 @@ public class SlotRegistry {
         public final int replay;
         public final int clown;
 
-        Setting(int BB, int RB, int C_BB, int C_RB, int cherry, int bell, int grape, int replay, int clown) {
+        LegacySetting(int BB, int RB, int C_BB, int C_RB, int cherry, int bell, int grape, int replay, int clown) {
             this.BB = BB;
             this.RB = RB;
             this.C_BB = C_BB;
@@ -694,7 +556,7 @@ public class SlotRegistry {
         }
 
         public int getIndex() {
-            return this.ordinal()+1;
+            return this.ordinal() + 1;
         }
 
     }
@@ -704,12 +566,12 @@ public class SlotRegistry {
         ItemMeta meta = item.getItemMeta();
         meta.displayName(Component.text("引き換え用レシート"));
         meta.lore(List.of(
-                        MiniMessage.miniMessage().deserialize("<gray>%s".formatted(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE))),
-                        MiniMessage.miniMessage().deserialize("<gray>メダル<bold>%d</bold>枚".formatted(coin)),
-                        Component.empty(),
-                        MiniMessage.miniMessage().deserialize("<gray>引き換え用レシート"),
-                        MiniMessage.miniMessage().deserialize("<gray>当日のみ有効")
-                ));
+                MiniMessage.miniMessage().deserialize("<gray>%s".formatted(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE))),
+                MiniMessage.miniMessage().deserialize("<gray>メダル<bold>%d</bold>枚".formatted(coin)),
+                Component.empty(),
+                MiniMessage.miniMessage().deserialize("<gray>引き換え用レシート"),
+                MiniMessage.miniMessage().deserialize("<gray>当日のみ有効")
+        ));
         meta.getPersistentDataContainer().set(Key.TYPE, PersistentDataType.STRING, "TICKET");
         meta.getPersistentDataContainer().set(Key.COIN, PersistentDataType.INTEGER, coin);
         meta.getPersistentDataContainer().set(Key.DATE, PersistentDataType.STRING, LocalDateTime.now().format(DateTimeFormatter.ISO_DATE));

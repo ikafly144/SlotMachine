@@ -2,15 +2,19 @@ package net.sabafly.slotmachine;
 
 import dev.cerus.maps.api.MapScreen;
 import dev.cerus.maps.api.event.PlayerClickScreenEvent;
+import dev.cerus.maps.plugin.map.MapScreenRegistry;
 import dev.cerus.maps.util.Vec2;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.sabafly.slotmachine.game.Machine;
+import net.sabafly.slotmachine.game.ScreenManager;
+import net.sabafly.slotmachine.game.Slot;
+import net.sabafly.slotmachine.game.slot.SlotRegistry;
 import net.sabafly.slotmachine.inventory.ConfigMenu;
 import net.sabafly.slotmachine.inventory.ExchangeMenu;
 import net.sabafly.slotmachine.inventory.PrizeMenu;
-import net.sabafly.slotmachine.game.slot.SlotRegistry;
-import net.sabafly.slotmachine.game.slot.SlotEntity;
+import net.sabafly.slotmachine.game.slot.SlotRegistry.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -90,30 +94,34 @@ public class EventListener implements Listener {
                 HumanEntity clickedEntity = event.getWhoClicked();
                 clickedEntity.sendPlainMessage("created");
                 clickedEntity.closeInventory();
-                this.plugin.getMapManager().newMap(configMenu.getEntity());
+                Slot slot = Slot.create(configMenu.getEntity(), WheelSet.JUGGLER, SettingSet.JUGGLER);
+                ScreenManager.registerMachine(slot, Bukkit.getScheduler());
+                return;
             }
 
-            SlotEntity slotEntity = configMenu.getMapEntity();
-            if (slotEntity == null) return;
+            Machine<?> machine = configMenu.getMachine();
+            if (machine == null) return;
+            if (machine instanceof Slot slot) {
 
-            switch (action) {
-                case "CANCEL_GAME" -> slotEntity.cancelPlay();
-                case "TOGGLE_FLAG" -> slotEntity.nextFlag();
-                case "TOGGLE_SETTING" -> slotEntity.nextSetting();
-                case "TOGGLE_DEBUG" -> slotEntity.setDebug(!slotEntity.isDebug());
-                case "DESTROY" -> {
-                    slotEntity.destroy();
-                    event.getWhoClicked().closeInventory();
+                switch (action) {
+                    case "CANCEL_GAME" -> slot.cancelPlay();
+                    case "TOGGLE_FLAG" -> slot.nextFlag();
+                    case "TOGGLE_SETTING" -> slot.nextSetting();
+                    case "TOGGLE_DEBUG" -> slot.toggleDebug();
+                    case "DESTROY" -> {
+                        slot.destroy();
+                        event.getWhoClicked().closeInventory();
+                    }
+                    case "NONE" -> {
+                        return;
+                    }
+                    default -> {
+                        HumanEntity player = event.getWhoClicked();
+                        player.sendPlainMessage("not implemented!!");
+                    }
                 }
-                case "NONE" -> {
-                    return;
-                }
-                default -> {
-                    HumanEntity player = event.getWhoClicked();
-                    player.sendPlainMessage("not implemented!!");
-                }
+                configMenu.update();
             }
-            configMenu.update();
         } else if (inventory.getHolder(false) instanceof PrizeMenu prizeMenu) {
 
             Inventory clickedInventory = event.getClickedInventory();
@@ -196,16 +204,15 @@ public class EventListener implements Listener {
             }
         }
         lastClick.put(player.getUniqueId(), Bukkit.getCurrentTick());
-        MapScreen screen = event.getClickedScreen();
+        final MapScreen screen = event.getClickedScreen();
         Vec2 clickPos = event.getClickPos();
-        SlotEntity map = plugin.getMapManager().findMap(screen.getId());
-        if (map == null) return;
+        if (!(ScreenManager.getScreenMap().get(screen) instanceof Slot slot)) return;
 
         if (event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BLAZE_ROD) {
             if (!player.hasPermission("slotmachine.admin")) return;
 
             event.setCancelled(true);
-            ConfigMenu menu = new ConfigMenu(this.plugin, map);
+            ConfigMenu menu = new ConfigMenu(this.plugin, slot);
 
             SlotMachine.newChain().sync(() -> player.openInventory(menu.getInventory())).execute();
             return;
@@ -213,25 +220,9 @@ public class EventListener implements Listener {
 
         if (!event.isLeftClick()) return;
 
-        if (!map.isPlaying()) {
-            map.start(player);
-        } else {
-            map.clicked(clickPos, player);
-        }
+        slot.onClick(player, clickPos);
 
         event.setCancelled(true);
-    }
-
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        plugin.getMapManager().leavePlayer(player);
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        plugin.getMapManager().joinPlayer(player);
     }
 
 }

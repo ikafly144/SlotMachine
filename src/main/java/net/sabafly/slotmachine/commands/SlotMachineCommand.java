@@ -10,6 +10,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.sabafly.slotmachine.SlotMachine;
+import net.sabafly.slotmachine.game.MedalBank;
 import net.sabafly.slotmachine.inventory.ExchangeMenu;
 import net.sabafly.slotmachine.inventory.PrizeMenu;
 import org.bukkit.Bukkit;
@@ -54,6 +55,8 @@ public class SlotMachineCommand extends ParaCommand {
             SlotMachine plugin = SlotMachine.getPlugin();
             try {
                 plugin.reloadPluginConfig();
+                MedalBank.save();
+                MedalBank.load();
             } catch (ConfigurateException e) {
                 plugin.getLogger().throwing(ConfigurateException.class.getName(), "reload", e);
                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Config reload failed"));
@@ -120,7 +123,7 @@ public class SlotMachineCommand extends ParaCommand {
                         return;
                     }
                     int amount = Integer.parseInt(args[3]);
-                    SlotMachine.getPlugin().getMapManager().addMedal(target, amount);
+                    MedalBank.addMedal(target, amount);
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Added " + amount + " medals to " + target.getName()));
                 }
                 case "remove" -> {
@@ -134,7 +137,7 @@ public class SlotMachineCommand extends ParaCommand {
                         return;
                     }
                     int amount = Integer.parseInt(args[3]);
-                    SlotMachine.getPlugin().getMapManager().removeMedal(target, amount);
+                    MedalBank.removeMedal(target, amount);
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Removed " + amount + " medals from " + target.getName()));
                 }
                 case "set" -> {
@@ -148,7 +151,7 @@ public class SlotMachineCommand extends ParaCommand {
                         return;
                     }
                     int amount = Integer.parseInt(args[3]);
-                    SlotMachine.getPlugin().getMapManager().setMedal(target, amount);
+                    MedalBank.setMedal(target, amount);
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Set " + target.getName() + "'s medals to " + amount));
                 }
                 case "get" -> {
@@ -161,7 +164,7 @@ public class SlotMachineCommand extends ParaCommand {
                         sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Player not found"));
                         return;
                     }
-                    long amount = SlotMachine.getPlugin().getMapManager().getMedal(target);
+                    long amount = MedalBank.getMedal(target);
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>" + target.getName() + "'s medals: " + amount));
                 }
                 case "list" -> {
@@ -170,7 +173,7 @@ public class SlotMachineCommand extends ParaCommand {
                         return;
                     }
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Medal list"));
-                    SlotMachine.getPlugin().getMapManager().getMedalMap().forEach((uuid, amount) -> {
+                    MedalBank.getMedalMap().forEach((uuid, amount) -> {
                         Player target = Bukkit.getPlayer(uuid);
                         if (target == null) return;
                         sender.sendMessage(MiniMessage.miniMessage().deserialize("  <white>" + target.getName() + "'s medals: " + amount));

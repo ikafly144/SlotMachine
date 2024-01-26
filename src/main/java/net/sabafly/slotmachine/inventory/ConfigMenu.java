@@ -1,8 +1,9 @@
 package net.sabafly.slotmachine.inventory;
 
 import net.kyori.adventure.text.Component;
+import net.sabafly.slotmachine.game.Machine;
+import net.sabafly.slotmachine.game.Slot;
 import net.sabafly.slotmachine.game.slot.SlotRegistry;
-import net.sabafly.slotmachine.game.slot.SlotEntity;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.Inventory;
@@ -18,27 +19,27 @@ import java.util.List;
 public class ConfigMenu extends ParaInventory {
 
     private final Entity entity;
-    private final SlotEntity slotEntity;
+    private final Slot slotEntity;
 
-    public ConfigMenu(Plugin plugin, SlotEntity entity) {
+    public ConfigMenu(Plugin plugin, Slot entity) {
         super(plugin,9, Component.text("config menu"));
         this.entity = null;
         this.slotEntity = entity;
-        update(plugin, entity);
+        update(entity);
     }
 
     public void update() {
-        update(getPlugin(), slotEntity);
+        update(slotEntity);
     }
 
-    private void update(Plugin plugin, SlotEntity entity) {
+    private void update(final Slot entity) {
         Inventory inventory = getInventory();
 
         ItemStack closeItem = new ItemStack(Material.REDSTONE_BLOCK);
         ItemMeta meta = closeItem.getItemMeta();
         meta.displayName(Component.text("cancel game"));
 
-        if (entity.isPlaying()) meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "CANCEL_GAME");
+        if (entity.getStatus().isPlaying()) meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "CANCEL_GAME");
 
         closeItem.setItemMeta(meta);
         inventory.setItem(0,closeItem);
@@ -56,7 +57,7 @@ public class ConfigMenu extends ParaInventory {
         ItemStack settingItem = new ItemStack(Material.CHEST);
         meta = settingItem.getItemMeta();
         meta.displayName(Component.text("setting"));
-        meta.lore(List.of(Component.text("setting: " + (entity.getSetting() != null ? entity.getSetting() : "null"))));
+        meta.lore(List.of(Component.text("setting: " + entity.getSettingId())));
 
         meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "TOGGLE_SETTING");
 
@@ -86,14 +87,15 @@ public class ConfigMenu extends ParaInventory {
         meta = item.getItemMeta();
         meta.displayName(Component.text("info"));
         meta.lore(List.of(
-                Component.text("uuid: " + entity.getUuid()),
+                Component.text("uuid: " + entity.getUniqueId()),
                 Component.text("flag: " + (entity.getFlag() != null ? entity.getFlag() : "null")),
+                Component.text("setting_id: " + entity.getSettingId()),
                 Component.text("setting: " + (entity.getSetting() != null ? entity.getSetting() : "null")),
-                Component.text("debug: " + entity.isDebug()),
+                Component.text("debug: " + entity.isDebug())/*,
                 Component.text("playing: " + entity.isPlaying()),
                 Component.text("totalPayIn: " + entity.getTotalPayIn()),
                 Component.text("totalPayOut: " + entity.getTotalPayOut()),
-                Component.text("totalBonus: " + entity.getTotalBonus())
+                Component.text("totalBonus: " + entity.getTotalBonus())*/
         ));
 
         item.setItemMeta(meta);
@@ -122,8 +124,7 @@ public class ConfigMenu extends ParaInventory {
         return entity;
     }
 
-    @Nullable
-    public SlotEntity getMapEntity() {
+    public Machine<?> getMachine() {
         return slotEntity;
     }
 

@@ -9,7 +9,10 @@ import net.sabafly.slotmachine.commands.CommodoreHandler;
 import net.sabafly.slotmachine.commands.SlotMachineCommand;
 import net.sabafly.slotmachine.configuration.Configurations;
 import net.sabafly.slotmachine.configuration.Transformations;
+import net.sabafly.slotmachine.game.MedalBank;
+import net.sabafly.slotmachine.game.ScreenManager;
 import net.sabafly.slotmachine.game.slot.SlotManager;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.spongepowered.configurate.CommentedConfigurationNode;
@@ -25,7 +28,6 @@ import java.util.logging.Logger;
 public final class SlotMachine extends JavaPlugin {
 
     private final Logger logger = getLogger();
-    private SlotManager slotManager;
     private CommodoreHandler commodoreHandler;
     private static Economy econ = null;
     private static Configurations config = null;
@@ -34,6 +36,7 @@ public final class SlotMachine extends JavaPlugin {
     public void onEnable() {
         try {
             reloadPluginConfig();
+            MedalBank.load();
         } catch (ConfigurateException e) {
             logger.severe("failed to load config");
             e.printStackTrace();
@@ -52,22 +55,20 @@ public final class SlotMachine extends JavaPlugin {
             new SlotMachineCommand(this);
 
             getServer().getPluginManager().registerEvents(new EventListener(this),this);
+            getServer().getPluginManager().registerEvents(new ScreenManager(),this);
 
             if (this.getServer().getPluginManager().getPlugin("maps")==null) {
                 this.getServer().getPluginManager().disablePlugin(this);
                 return;
             }
 
-            try {
-                slotManager = new SlotManager(new File(getDataFolder(),"data"), this);
-            } catch (IOException e) {
-                e.printStackTrace();
-                this.getServer().getPluginManager().disablePlugin(this);
-                return;
-            }
-
-            getServer().getScheduler().runTaskAsynchronously(this, () -> slotManager.load());
-
+            newChain().delay(1).async(() -> {
+                try {
+                    ScreenManager.load(new File(getDataFolder(),"data"), Bukkit.getScheduler());
+                } catch (ConfigurateException e) {
+                    throw new RuntimeException(e);
+                }
+            }).execute();
         }
     }
 
@@ -75,18 +76,16 @@ public final class SlotMachine extends JavaPlugin {
     public void onDisable() {
 
         try {
-            slotManager.close();
+            ScreenManager.save(new File(getDataFolder(),"data"));
         } catch (Exception e) {
             logger.warning("failed to save map");
-            logger.throwing(SlotManager.class.getName(), "close", e);
+            throw new RuntimeException(e);
         }
 
         logger.info(String.format("disabled (version %s)", getDescription().getVersion()));
     }
 
     public CommodoreHandler commodoreHandler() { return commodoreHandler; }
-
-    public SlotManager getMapManager() { return slotManager; }
 
     private boolean setupEconomy() {
         if (getServer().getPluginManager().getPlugin("Vault") == null) {
@@ -117,7 +116,6 @@ public final class SlotMachine extends JavaPlugin {
     }
 
     public void reloadPluginConfig() throws ConfigurateException {
-        super.reloadConfig();
         final YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
                 .path(new File(getPlugin().getDataFolder(), "config.yml").toPath())
                 .indent(2)

@@ -40,6 +40,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 
+@Deprecated(forRemoval = true)
 public class SlotEntity implements Runnable {
 
     public static final Gson GSON = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
@@ -58,7 +59,7 @@ public class SlotEntity implements Runnable {
     int debugSetting = 0;
 
     public void nextSetting() {
-        setting = SlotRegistry.Setting.values()[debugSetting++% SlotRegistry.Setting.values().length];
+        setting = SlotRegistry.LegacySetting.values()[debugSetting++% SlotRegistry.LegacySetting.values().length];
     }
 
     public Player getPlayer() {
@@ -67,7 +68,7 @@ public class SlotEntity implements Runnable {
 
     private Status status = Status.IDLE;
 
-    public SlotRegistry.Setting getSetting() {
+    public SlotRegistry.LegacySetting getSetting() {
         return setting;
     }
 
@@ -109,7 +110,7 @@ public class SlotEntity implements Runnable {
     private final Plugin plugin;
     private @NotNull RandomGenerator rng = RandomGeneratorFactory.of("Random").create(ThreadLocalRandom.current().nextInt());
     private final BukkitTask task;
-    private SlotRegistry.Setting setting;
+    private SlotRegistry.LegacySetting setting;
     private String lastPlayed = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE);
 
     public boolean isPlaying() {
@@ -128,7 +129,7 @@ public class SlotEntity implements Runnable {
     public static SlotEntity load(SlotManager manager, JsonObject json, Plugin plugin) {
         UUID uuid = UUID.fromString(json.get("uuid").getAsString());
         int screenId = json.get("screen_id").getAsInt();
-        SlotRegistry.Setting setting = SlotRegistry.Setting.getSetting(json.get("setting").getAsInt());
+        SlotRegistry.LegacySetting setting = SlotRegistry.LegacySetting.getSetting(json.get("setting").getAsInt());
         MapScreen screen = MapScreenRegistry.getScreen(screenId);
         if (screen == null) {
             return null;
@@ -142,7 +143,7 @@ public class SlotEntity implements Runnable {
 
     private static long lastId = 0L;
 
-    public SlotEntity(UUID uuid, @NotNull MapScreen screen, SlotManager manager, Plugin plugin, SlotRegistry.Setting setting) {
+    public SlotEntity(UUID uuid, @NotNull MapScreen screen, SlotManager manager, Plugin plugin, SlotRegistry.LegacySetting setting) {
         this.uuid = uuid;
         this.screen = screen;
         this.manager = manager;
@@ -197,8 +198,7 @@ public class SlotEntity implements Runnable {
         this.player = player;
     }
 
-    public void stop(Player player) {
-        if (this.getPlayer() == null) return;
+    public void stop(@NotNull Player player) {
         if (coin > 0) {
             ItemStack ticket = SlotRegistry.getTicket(coin);
             player.updateInventory();
@@ -281,7 +281,7 @@ public class SlotEntity implements Runnable {
             }
 
             private BufferedImage getImage(Integer range) {
-                return wheelPatterns[(getReelCount()+range)% wheelPatterns.length].getImage().getImage();
+                return wheelPatterns[(getReelCount()+range)% wheelPatterns.length].getImage();
             }
 
             private void step() {
@@ -294,10 +294,6 @@ public class SlotEntity implements Runnable {
                 this.stopped = true;
                 this.reelCount += step;
                 this.stoppedReelCount = this.reelCount;
-            }
-
-            private void stop() {
-                this.stop(0);
             }
 
             private void start() {
@@ -414,7 +410,7 @@ public class SlotEntity implements Runnable {
                     Song.START.play(screen.getLocation());
                     if (isBonus()) {
                         bonusGameCount++;
-                        estFlag = SlotRegistry.Flag.genFlag(rng, SlotRegistry.Setting.BONUS);
+                        estFlag = SlotRegistry.Flag.genFlag(rng, SlotRegistry.LegacySetting.BONUS);
                     } else {
                         if (estFlag == null || !estFlag.isBonus()) estFlag = SlotRegistry.Flag.genFlag(rng, setting);
                         if (estFlag != null && estFlag.isEarlyAnnounce()) announced = true;
@@ -452,8 +448,8 @@ public class SlotEntity implements Runnable {
             int stepCount = getStepCount(this.estFlag, pos);
             this.getReel(pos).stop(stepCount);
             if (this.isStopped()) {
-                if (hasFlag()) {
-                    SlotRegistry.Flag flag = getFlag();
+                SlotRegistry.Flag flag = SlotRegistry.Flag.getFlag(reelPattern.getReel(ReelPos.LEFT).getReelCount(), reelPattern.getReel(ReelPos.CENTER).getReelCount(), reelPattern.getReel(ReelPos.RIGHT).getReelCount());
+                if (hasFlag() && flag != null && (flag == estFlag || flag.isCherry() == estFlag.isCherry())) {
                     if (isDebug()) getPlayer().sendPlainMessage("win" + (this.estFlag != null ? " " + this.estFlag : ""));
                     if (flag.isBonus()) {
                         announced = false;
@@ -480,11 +476,15 @@ public class SlotEntity implements Runnable {
 
                     addCoin(flag.getCoin());
 
+                    highlightFlag = flag;
+                    highlightLine = SlotRegistry.Flag.getStopLine(getReel(ReelPos.LEFT).getReelCount(), getReel(ReelPos.CENTER).getReelCount(), getReel(ReelPos.RIGHT).getReelCount());
                     if (flag.isCherry() && estFlag.isBonus()) {
                         announced = true;
                         new Song(List.of(
                                 new Song.Note(Sound.BLOCK_PISTON_CONTRACT, 1, 0, 1)
                         )).play(screen.getLocation());
+                        estFlag.withoutCherry();
+                        return;
                     }
                     if (flag == SlotRegistry.Flag.F_REPLAY) {
                         Song.REPLAY.play(screen.getLocation());
@@ -493,20 +493,17 @@ public class SlotEntity implements Runnable {
                     if (flag == SlotRegistry.Flag.F_GRAPE) Song.GRAPE.play(screen.getLocation());
 
                     estFlag = null;
-                    highlightFlag = flag;
-                    highlightLine = SlotRegistry.Flag.getStopLine(getReel(ReelPos.LEFT).getReelCount(), getReel(ReelPos.CENTER).getReelCount(), getReel(ReelPos.RIGHT).getReelCount());
+                    return;
                 }
-                else {
-                    if (isDebug()) getPlayer().sendPlainMessage("lose");
-                    // TODO: はずれサウンド
-                    if (estFlag == null || !estFlag.isBonus())
-                        this.estFlag = null;
-                    if (estFlag != null && !estFlag.isCherry() && !announced) {
-                        announced = true;
-                        new Song(List.of(
-                                new Song.Note(Sound.BLOCK_PISTON_CONTRACT, 1, 0, 1)
-                        )).play(screen.getLocation());
-                    }
+                if (isDebug()) getPlayer().sendPlainMessage("lose");
+                // TODO: はずれサウンド
+                if (estFlag == null || !estFlag.isBonus())
+                    this.estFlag = null;
+                if (estFlag != null && !estFlag.isCherry() && !announced) {
+                    announced = true;
+                    new Song(List.of(
+                            new Song.Note(Sound.BLOCK_PISTON_CONTRACT, 1, 0, 1)
+                    )).play(screen.getLocation());
                 }
 
             }
@@ -564,7 +561,7 @@ public class SlotEntity implements Runnable {
 
         private int getStepCount(SlotRegistry.Flag flag, ReelPos pos) {
             SlotRegistry.WheelPattern[] wheelPatterns = getReel(pos).getReelPattern();
-            if (flag != null) {
+            if (flag != null && (getReel(ReelPos.LEFT).isRunning() || (Arrays.stream(getReel(ReelPos.LEFT).getReelPattern()).limit(3).noneMatch(p -> p == SlotRegistry.WheelPattern.CHERRY)))) {
                 for (int i = 0; i < wheelPatterns.length - 2; i++) {
                     if (flag.isCherry()) {
                         if (pos == ReelPos.LEFT && getReel(ReelPos.CENTER).isRunning() && getReel(ReelPos.RIGHT).isRunning()) {

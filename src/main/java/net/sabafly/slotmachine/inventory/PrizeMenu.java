@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.sabafly.slotmachine.SlotMachine;
 import net.sabafly.slotmachine.configuration.Configurations;
+import net.sabafly.slotmachine.game.MedalBank;
 import net.sabafly.slotmachine.game.slot.SlotRegistry;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -24,7 +25,7 @@ public class PrizeMenu extends ParaInventory {
     public PrizeMenu(HumanEntity player, int page) {
         super(SlotMachine.getPlugin(),54, Component.text("prize menu"));
         this.page = page;
-        Long t = SlotMachine.getPlugin().getMapManager().removeMedalAll(player);
+        Long t = MedalBank.removeMedalAll(player);
         if (t == null) t = 0L;
         this.medal = t;
         update(getPlugin());
@@ -123,7 +124,7 @@ public class PrizeMenu extends ParaInventory {
     }
 
     public void close(HumanEntity player) {
-        SlotMachine.getPlugin().getMapManager().addMedal(player, medal);
+        MedalBank.addMedal(player, medal);
         player.sendPlainMessage("現在の残高：" + medal + "枚");
     }
 }

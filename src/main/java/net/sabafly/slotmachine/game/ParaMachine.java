@@ -3,72 +3,57 @@ package net.sabafly.slotmachine.game;
 import dev.cerus.maps.api.MapScreen;
 import dev.cerus.maps.api.graphics.ColorCache;
 import dev.cerus.maps.api.graphics.MapGraphics;
-import dev.cerus.maps.plugin.map.MapScreenRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.spongepowered.configurate.CommentedConfigurationNode;
-import org.spongepowered.configurate.ConfigurateException;
-import org.spongepowered.configurate.loader.HeaderMode;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.yaml.NodeStyle;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@ConfigSerializable
 public abstract class ParaMachine implements Machine<ParaMachine> {
 
     long tick = 0;
+    long cooldown = 0;
     final MapScreen screen;
+    final UUID uuid;
 
-    public ParaMachine() {
-        this.screen = MapScreenRegistry.getScreen(MapScreenRegistry.getNextFreeId());
+    public ParaMachine(final MapScreen screen) {
+        this(screen, UUID.randomUUID());
     }
 
-    @Override
-    public ParaMachine load(File file) throws ConfigurateException {
-        final YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
-                .path(file.toPath())
-                .indent(2)
-                .headerMode(HeaderMode.PRESET)
-                .nodeStyle(NodeStyle.BLOCK)
-                .build();
-        CommentedConfigurationNode node =loader.load();
-        return node.get(this.getClass());
-    }
-
-    @Override
-    public void save(File file) {
-
+    public ParaMachine(final MapScreen screen, UUID uuid) {
+        this.uuid = uuid;
+        this.screen = screen;
     }
 
     @Override
     public void run() {
-        final MapGraphics<?, ?> graphics = screen.getGraphics();
+        final MapGraphics<?, ?> graphics = getScreen().getGraphics();
         graphics.fillComplete(ColorCache.rgbToMap(0, 0, 0));
         tick++;
     }
 
+    @Override
+    public UUID getUniqueId() {
+        return this.uuid;
+    }
 
-    protected void sendPlayers() {
+    public void sendPlayers() {
         final Collection<Player> receivers = new HashSet<>();
-        final Set<UUID> viewers = ScreenManager.getViewerMap().computeIfAbsent(screen.getId(), $ -> new HashSet<>());
+        final Set<UUID> viewers = ScreenManager.getViewerMap().computeIfAbsent(this.getUniqueId(), $ -> new HashSet<>());
         for (final Player player : Bukkit.getOnlinePlayers()) {
-            if (player.getWorld().equals(screen.getLocation().getWorld())) {
-                final double dist = player.getLocation().distanceSquared(screen.getLocation());
+            if (player.getWorld().equals(getScreen().getLocation().getWorld())) {
+                final double dist = player.getLocation().distanceSquared(getScreen().getLocation());
                 if (viewers.contains(player.getUniqueId()) && dist > ScreenManager.MAX_DIST) {
                     // Remove
                     viewers.remove(player.getUniqueId());
-                    screen.destroyFrames(player);
+                    getScreen().destroyFrames(player);
                 } else if (!viewers.contains(player.getUniqueId()) && dist < ScreenManager.MAX_DIST) {
                     // Add
                     viewers.add(player.getUniqueId());
-                    screen.spawnFrames(player);
-                    screen.sendMaps(true, player);
+                    getScreen().spawnFrames(player);
+                    getScreen().sendMaps(true, player);
                 }
             } else {
                 viewers.remove(player.getUniqueId());
@@ -79,7 +64,7 @@ public abstract class ParaMachine implements Machine<ParaMachine> {
             }
         }
         if (!receivers.isEmpty()) {
-            screen.sendMaps(false, receivers);
+            getScreen().sendMaps(false, receivers);
         }
         for (final UUID uuid : Set.copyOf(viewers)) {
             if (Bukkit.getPlayer(uuid) == null) {
@@ -88,4 +73,8 @@ public abstract class ParaMachine implements Machine<ParaMachine> {
         }
     }
 
+    @Override
+    public MapScreen getScreen() {
+        return screen;
+    }
 }

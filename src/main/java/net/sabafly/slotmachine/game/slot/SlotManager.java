@@ -18,12 +18,15 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Deprecated(forRemoval = true)
 public class SlotManager implements AutoCloseable {
 
     private final File dataFolder;
@@ -32,6 +35,7 @@ public class SlotManager implements AutoCloseable {
     private final Map<Integer, Set<UUID>> screenViewerMap = new HashMap<>();
     private final Plugin plugin;
     private final Map<UUID, Long> medalMap = new HashMap<>();
+    private String lastTakeMedalDay = "";
     private final Map<UUID, Long> medalTakeMap = new HashMap<>();
 
     public SlotManager(File dataFolder, Plugin plugin) throws IOException {
@@ -101,7 +105,6 @@ public class SlotManager implements AutoCloseable {
     }
 
     public void resetMap(Entity entity) {
-        MapScreenRegistry.getNextFreeId();
         ItemFrame itemFrame = (ItemFrame) entity;
 
         MapScreen screen = new MapScreen(MapScreenRegistry.getNextFreeId(), new VersionAdapterFactory().makeAdapter(), 1, 1);
@@ -128,7 +131,7 @@ public class SlotManager implements AutoCloseable {
 
         itemFrame.remove();
 
-        SlotEntity slotEntity = new SlotEntity(itemFrame.getUniqueId(), screen, this, plugin, SlotRegistry.Setting.SETTING_3);
+        SlotEntity slotEntity = new SlotEntity(itemFrame.getUniqueId(), screen, this, plugin, SlotRegistry.LegacySetting.SETTING_3);
         putMap(slotEntity, slotEntity.getScreen());
 
     }
@@ -203,6 +206,10 @@ public class SlotManager implements AutoCloseable {
     }
 
     public boolean canTakeMedal(HumanEntity player, long medal) {
+        if (!lastTakeMedalDay.equals(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))) {
+            medalTakeMap.clear();
+            lastTakeMedalDay = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        }
         long m = getMedal(player);
         if (m < medal) return false;
         Long p = medalTakeMap.getOrDefault(player.getUniqueId(), 0L);
