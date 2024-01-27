@@ -35,7 +35,7 @@ public final class SlotMachine extends JavaPlugin {
     public void onEnable() {
         try {
             reloadPluginConfig();
-            MedalBank.load();
+            MedalBank.load(getDataFolder());
         } catch (ConfigurateException e) {
             logger.severe("failed to load config");
             e.printStackTrace();
@@ -80,6 +80,7 @@ public final class SlotMachine extends JavaPlugin {
 
         try {
             ScreenManager.save(new File(getDataFolder(),"data"));
+            MedalBank.save(getDataFolder());
         } catch (Exception e) {
             logger.warning("failed to save map");
             throw new RuntimeException(e);

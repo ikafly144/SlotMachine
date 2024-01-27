@@ -59,8 +59,8 @@ public class SlotMachineCommand extends ParaCommand {
             SlotMachine plugin = SlotMachine.getPlugin();
             try {
                 plugin.reloadPluginConfig();
-                MedalBank.save();
-                MedalBank.load();
+                MedalBank.save(plugin.getDataFolder());
+                MedalBank.load(plugin.getDataFolder());
             } catch (ConfigurateException e) {
                 plugin.getLogger().throwing(ConfigurateException.class.getName(), "reload", e);
                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Config reload failed"));
@@ -190,8 +190,10 @@ public class SlotMachineCommand extends ParaCommand {
             return;
         }
 
-        if (isPlayer) player.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
-        else sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
+        if (isPlayer)
+            player.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
+        else
+            sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
     }
 
     @Override
@@ -200,10 +202,14 @@ public class SlotMachineCommand extends ParaCommand {
 
         if (args.length == 1 && !isPlayer) return List.of("reload", "medal", "rng");
         if (args.length == 2 && !isPlayer) return List.of("add", "remove", "set", "get", "list");
-        if (args.length == 3 && args[1].equalsIgnoreCase("get")) return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-        if (args.length == 3 && args[1].equalsIgnoreCase("add")) return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-        if (args.length == 3 && args[1].equalsIgnoreCase("remove")) return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
-        if (args.length == 3 && args[1].equalsIgnoreCase("set")) return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+        if (args.length == 3 && args[1].equalsIgnoreCase("get"))
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+        if (args.length == 3 && args[1].equalsIgnoreCase("add"))
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+        if (args.length == 3 && args[1].equalsIgnoreCase("remove"))
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
+        if (args.length == 3 && args[1].equalsIgnoreCase("set"))
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
         return List.of();
     }
 

@@ -3,6 +3,7 @@ package net.sabafly.slotmachine.game;
 import net.sabafly.slotmachine.SlotMachine;
 import net.sabafly.slotmachine.configuration.Medals;
 import org.bukkit.entity.HumanEntity;
+import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.loader.HeaderMode;
 import org.spongepowered.configurate.yaml.NodeStyle;
@@ -19,28 +20,31 @@ public class MedalBank {
     static LocalDate lastTakeMedalDay = LocalDate.now();
     static Map<UUID, Long> medalTakeMap = new HashMap<>();
 
-    public static void save() throws ConfigurateException {
+    public static void save(File file) throws ConfigurateException {
         SlotMachine.getPlugin().getLogger().info("Saving medal data...");
         final YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
-                .path(new File(SlotMachine.getPlugin().getDataFolder(), "medals.yml").toPath())
+                .path(new File(file, "medals.yml").toPath())
                 .indent(2)
                 .headerMode(HeaderMode.PRESET)
                 .nodeStyle(NodeStyle.BLOCK)
                 .build();
-        loader.load().node("medals").set(new Medals(medalMap));
+        final CommentedConfigurationNode node = loader.load();
+        node.set(new Medals(medalMap));
+        loader.save(node);
         SlotMachine.getPlugin().getLogger().info("Saving medal data... Done!");
     }
 
-    public static void load() throws ConfigurateException {
+    public static void load(File file) throws ConfigurateException {
         SlotMachine.getPlugin().getLogger().info("Loading medal data...");
         final YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
-                .path(new File(SlotMachine.getPlugin().getDataFolder(), "medals.yml").toPath())
+                .path(new File(file, "medals.yml").toPath())
                 .indent(2)
                 .headerMode(HeaderMode.PRESET)
                 .nodeStyle(NodeStyle.BLOCK)
                 .build();
-        medalMap = loader.load().node("medals").get(Medals.class, new Medals()).medalMap;
+        medalMap = loader.load().get(Medals.class, new Medals()).medalMap;
         SlotMachine.getPlugin().getLogger().info("Loading medal data... Done!");
+        SlotMachine.getPlugin().getLogger().info("Medal data count: " + medalMap.size());
     }
 
 
