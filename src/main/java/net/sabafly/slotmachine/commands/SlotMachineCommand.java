@@ -59,10 +59,8 @@ public class SlotMachineCommand extends ParaCommand {
             SlotMachine plugin = SlotMachine.getPlugin();
             try {
                 plugin.reloadPluginConfig();
-                MedalBank.save(plugin.getDataFolder());
-                MedalBank.load(plugin.getDataFolder());
             } catch (ConfigurateException e) {
-                plugin.getLogger().throwing(ConfigurateException.class.getName(), "reload", e);
+                e.printStackTrace();
                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Config reload failed"));
                 return;
             }
@@ -107,6 +105,26 @@ public class SlotMachineCommand extends ParaCommand {
         if (args[0].equalsIgnoreCase("medal")) {
             if (args.length < 2) {
                 sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
+                return;
+            }
+
+            try {
+                switch (args[1].toLowerCase()) {
+                    case "list" -> {
+                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
+                        return;}
+                    case "save" -> {
+                        MedalBank.save(SlotMachine.getPlugin().getDataFolder());
+                        return;
+                    }
+                    case "load" -> {
+                        MedalBank.load(SlotMachine.getPlugin().getDataFolder());
+                        return;
+                    }
+                }
+            } catch (ConfigurateException e) {
+                e.printStackTrace();
+                sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Config reload failed"));
                 return;
             }
 
@@ -165,10 +183,6 @@ public class SlotMachineCommand extends ParaCommand {
                     OfflinePlayer target = Bukkit.getOfflinePlayer(name);
                     long amount = MedalBank.getMedal(target.getUniqueId());
                     sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>" + target.getName() + "'s medals: " + amount));
-                }
-                case "list" -> {
-                    sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
-                    return;
                 }
             }
             return;
@@ -239,6 +253,10 @@ public class SlotMachineCommand extends ParaCommand {
                                 .then(RequiredArgumentBuilder.argument("player", StringArgumentType.string())))
                         .then(LiteralArgumentBuilder
                                 .literal("list"))
+                        .then(LiteralArgumentBuilder
+                                .literal("save"))
+                        .then(LiteralArgumentBuilder
+                                .literal("load"))
                 )
                 .then(LiteralArgumentBuilder.
                         literal("rng")
