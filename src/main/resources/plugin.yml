@@ -9,7 +9,6 @@ softdepend:
 depend:
   - maps
   - Vault
-  - ProtocolLib
 
 permissions:
   slotmachine.play:
