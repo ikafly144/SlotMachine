@@ -111,20 +111,27 @@ public class SlotMachineCommand extends ParaCommand {
             try {
                 switch (args[1].toLowerCase()) {
                     case "list" -> {
-                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
-                        return;}
+                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Medal list"));
+                        MedalBank.getMedalMap().forEach((uuid, amount) -> {
+                            OfflinePlayer target = Bukkit.getOfflinePlayer(uuid);
+                            sender.sendMessage(MiniMessage.miniMessage().deserialize("  <white>" + target.getName() + "'s medals: " + amount));
+                        });
+                        return;
+                    }
                     case "save" -> {
                         MedalBank.save(SlotMachine.getPlugin().getDataFolder());
+                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Medal data saved"));
                         return;
                     }
                     case "load" -> {
                         MedalBank.load(SlotMachine.getPlugin().getDataFolder());
+                        sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Medal data loaded"));
                         return;
                     }
                 }
             } catch (ConfigurateException e) {
                 e.printStackTrace();
-                sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Config reload failed"));
+                sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Command failed"));
                 return;
             }
 
@@ -215,7 +222,7 @@ public class SlotMachineCommand extends ParaCommand {
         boolean isPlayer = sender instanceof Player;
 
         if (args.length == 1 && !isPlayer) return List.of("reload", "medal", "rng");
-        if (args.length == 2 && !isPlayer) return List.of("add", "remove", "set", "get", "list");
+        if (args.length == 2 && !isPlayer) return List.of("add", "remove", "set", "get", "list", "save");
         if (args.length == 3 && args[1].equalsIgnoreCase("get"))
             return Bukkit.getOnlinePlayers().stream().map(Player::getName).toList();
         if (args.length == 3 && args[1].equalsIgnoreCase("add"))
