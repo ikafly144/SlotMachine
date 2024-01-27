@@ -326,7 +326,7 @@ public class Slot extends ParaMachine {
                 );
             } else {
                 player.sendMessage(
-                        Component.text().color(TextColor.color(0xff0000)).append(
+                        Component.text().color(TextColor.color(0xf72424)).append(
                                 Component.text("貯メダルが足りないか、今日の上限に達しています"),
                                 Component.newline(),
                                 Component.text("貯メダル: " + MedalBank.getMedal(player.getUniqueId()))
