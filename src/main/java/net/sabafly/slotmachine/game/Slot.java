@@ -36,6 +36,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -53,6 +54,7 @@ public class Slot extends ParaMachine {
     private int settingId;
     private final SettingSet settings;
     private final RandomGenerator random = RandomGenerator.of("Random");
+    private LocalDateTime lastClickedTime = LocalDateTime.now();
 
     public Status getStatus() {
         return this.status;
@@ -194,9 +196,11 @@ public class Slot extends ParaMachine {
 
     @Override
     public void run() {
-        final MapGraphics<?, ?> graphics = getScreen().getGraphics();
-        render(graphics);
-        sendPlayers();
+        if (!LocalDateTime.now().isAfter(lastClickedTime.plusSeconds(30)) || tick % 20 == 0) {
+            final MapGraphics<?, ?> graphics = getScreen().getGraphics();
+            render(graphics);
+            sendPlayers();
+        }
 
         // 払い出し処理
         if (tick % 3 == 0 && ram.payOut > 0) {
@@ -339,6 +343,7 @@ public class Slot extends ParaMachine {
 
     @Override
     public void onClick(Player clicked, Vec2 pos) {
+        lastClickedTime = LocalDateTime.now();
         if (isDebug)
             clicked.sendMessage(Component.text().append(Component.text("clicked: " + pos.x + ", " + pos.y), Component.text(" status: " + status)).build());
         lastClickedPos = pos;
