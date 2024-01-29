@@ -135,6 +135,11 @@ public class SlotMachineCommand extends ParaCommand {
                 return;
             }
 
+            if (args.length < 3) {
+                sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Unknown command"));
+                return;
+            }
+
             if (isPlayer && !player.hasPermission("slotmachine.admin")) {
                 player.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>You don't have permission"));
                 return;
@@ -143,7 +148,7 @@ public class SlotMachineCommand extends ParaCommand {
             UUID name = Bukkit.getOfflinePlayer(args[2]).getUniqueId();
             if (SlotMachine.isFloodgate()) {
                 final String prefix = FloodgateApi.getInstance().getPlayerPrefix();
-                if (args.length == 3 && args[2].startsWith(prefix)) {
+                if (args[2].startsWith(prefix)) {
                     try {
                         name = FloodgateApi.getInstance().getUuidFor(args[2].substring(prefix.length())).get();
                     } catch (InterruptedException | ExecutionException e) {

@@ -3,10 +3,10 @@ package net.sabafly.slotmachine.game.slot;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
+import java.util.Objects;
 
 public enum AssetImage {
     BASE("/assets/base.png", ImageType.PALETTE),
-    IDLE("/assets/idle.png", ImageType.PALETTE),
     SEVEN("/assets/seven_icon.png", ImageType.REEL_ICON),
     CHERRY("/assets/cherry_icon.png", ImageType.REEL_ICON),
     BELL("/assets/bell_icon.png", ImageType.REEL_ICON),
@@ -41,6 +41,7 @@ public enum AssetImage {
 
     AssetImage(String path, ImageType type) {
         InputStream stream = getClass().getResourceAsStream(path);
+        Objects.requireNonNull(stream);
         BufferedImage image = null;
         try {
             image = ImageIO.read(stream);

@@ -2,7 +2,6 @@ package net.sabafly.slotmachine;
 
 import dev.cerus.maps.api.MapScreen;
 import dev.cerus.maps.api.event.PlayerClickScreenEvent;
-import dev.cerus.maps.plugin.map.MapScreenRegistry;
 import dev.cerus.maps.util.Vec2;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -11,10 +10,11 @@ import net.sabafly.slotmachine.game.Machine;
 import net.sabafly.slotmachine.game.ScreenManager;
 import net.sabafly.slotmachine.game.Slot;
 import net.sabafly.slotmachine.game.slot.SlotRegistry;
+import net.sabafly.slotmachine.game.slot.SlotRegistry.SettingSet;
+import net.sabafly.slotmachine.game.slot.SlotRegistry.WheelSet;
 import net.sabafly.slotmachine.inventory.ConfigMenu;
 import net.sabafly.slotmachine.inventory.ExchangeMenu;
 import net.sabafly.slotmachine.inventory.PrizeMenu;
-import net.sabafly.slotmachine.game.slot.SlotRegistry.*;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
@@ -24,10 +24,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.*;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -35,17 +36,17 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class EventListener implements Listener {
 
     private final SlotMachine plugin;
-    private final Logger logger;
 
     public EventListener(SlotMachine plugin) {
         this.plugin = plugin;
-        this.logger = plugin.getLogger();
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -108,6 +109,7 @@ public class EventListener implements Listener {
                     case "TOGGLE_FLAG" -> slot.nextFlag();
                     case "TOGGLE_SETTING" -> slot.nextSetting();
                     case "TOGGLE_DEBUG" -> slot.toggleDebug();
+                    case "RESET" -> slot.resetRam();
                     case "DESTROY" -> {
                         slot.destroy();
                         event.getWhoClicked().closeInventory();

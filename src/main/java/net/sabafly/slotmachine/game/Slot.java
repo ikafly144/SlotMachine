@@ -85,6 +85,16 @@ public class Slot extends ParaMachine {
         setStatus(Status.IDLE);
     }
 
+    public void stop(@NotNull Player player) {
+        if (ram.coin > 0) {
+            ItemStack ticket = SlotRegistry.getTicket(ram.coin);
+            player.updateInventory();
+            player.getInventory().addItem(ticket);
+            ram.coin = 0;
+        }
+        end();
+    }
+
     public void nextFlag() {
         ram.estFlag = Flag.values()[(ram.estFlag == null ? 0 : ram.estFlag.ordinal() + 1) % Flag.values().length];
     }
@@ -94,14 +104,12 @@ public class Slot extends ParaMachine {
         if (this.settingId > SettingSet.SIZE) this.settingId = 1;
     }
 
-    public void stop(@NotNull Player player) {
-        if (ram.coin > 0) {
-            ItemStack ticket = SlotRegistry.getTicket(ram.coin);
-            player.updateInventory();
-            player.getInventory().addItem(ticket);
-            ram.coin = 0;
-        }
-        end();
+    public void resetRam() {
+        this.ram = new RamData();
+    }
+
+    public Stats getStats() {
+        return stats.clone();
     }
 
     @ConfigSerializable
@@ -119,13 +127,22 @@ public class Slot extends ParaMachine {
     private final @NotNull Stats stats;
 
     @ConfigSerializable
-    public static class Stats {
+    public static class Stats implements Cloneable {
         public long totalPayIn = 0L;
         public long totalPayOut = 0L;
         public long totalGameCount = 0;
         public int totalBonusCount = 0;
         public int totalBonusPayOut = 0;
         public int totalBigBonusCount = 0;
+
+        @Override
+        public Stats clone() {
+            try {
+                return (Stats) super.clone();
+            } catch (CloneNotSupportedException e) {
+                throw new InternalError(e);
+            }
+        }
     }
 
     Slot(final WheelSet wheelSet, final SettingSet settings, final @NotNull MapScreen screen) {
@@ -207,6 +224,16 @@ public class Slot extends ParaMachine {
         if (tick % 3 == 0 && ram.payOut > 0) {
             ram.payOut--;
             ram.coin++;
+            // ボーナス中処理
+            if (isBonusNow()) {
+                ram.bonusCoinCount++;
+                // ボーナス終了処理
+                if (ram.bonusCoinCount >= (ram.bonusFlag.isBigBonus() ? 280 : ram.bonusFlag.isRegularBonus() ? 98 : 0)) {
+                    ram.bonusFlag = null;
+                    ram.bonusCoinCount = 0;
+                    ram.bonusAnnounced = false;
+                }
+            }
             new Song(List.of(
                     new Song.Note(Sound.BLOCK_NOTE_BLOCK_BIT, 0.529732f, 1, 1f),
                     new Song.Note(Sound.BLOCK_NOTE_BLOCK_BIT, 0.529732f, 0, 1f)
@@ -214,7 +241,7 @@ public class Slot extends ParaMachine {
         }
 
         super.run();
-        if (tick % 2 == 1) wheels.step();
+        wheels.step();
     }
 
     @Override
@@ -283,60 +310,66 @@ public class Slot extends ParaMachine {
             }
         }));
         buttons.add(new UIButton(113, 53, 10, 10, (player, pos) -> {
-            EconomyResponse response = SlotMachine.getEconomy().withdrawPlayer(player, SlotMachine.getPluginConfig().lend.price);
-            if (response.transactionSuccess()) {
-                ComponentBuilder<?, ?> c =
-                        Component.text().append(
-                                Component.text("メダル貸出"),
-                                Component.newline(),
-                                Component.text("残高: " + SlotMachine.getEconomy().format(response.balance))
-                        );
-                player.sendMessage(c);
-                SlotMachine.getPlugin().getComponentLogger().info(c.build());
-                this.ram.payOut += SlotMachine.getPluginConfig().lend.count;
-                this.stats.totalPayIn += SlotMachine.getPluginConfig().lend.count;
-            } else {
-                player.sendMessage(
-                        Component.text().color(TextColor.color(0xf72424)).append(
-                                Component.text("手続きが完了しませんでした"),
-                                Component.newline(),
-                                Component.text("残高不足: " + SlotMachine.getEconomy().format(response.balance))
-                        )
-                );
+            if (getStatus() == Status.IDLE && ram.payOut < 1) {
+                EconomyResponse response = SlotMachine.getEconomy().withdrawPlayer(player, SlotMachine.getPluginConfig().lend.price);
+                if (response.transactionSuccess()) {
+                    ComponentBuilder<?, ?> c =
+                            Component.text().append(
+                                    Component.text("メダル貸出"),
+                                    Component.newline(),
+                                    Component.text("残高: " + SlotMachine.getEconomy().format(response.balance))
+                            );
+                    player.sendMessage(c);
+                    SlotMachine.getPlugin().getComponentLogger().info(c.build());
+                    this.ram.payOut += SlotMachine.getPluginConfig().lend.count;
+                    this.stats.totalPayIn += SlotMachine.getPluginConfig().lend.count;
+                } else {
+                    player.sendMessage(
+                            Component.text().color(TextColor.color(0xf72424)).append(
+                                    Component.text("手続きが完了しませんでした"),
+                                    Component.newline(),
+                                    Component.text("残高不足: " + SlotMachine.getEconomy().format(response.balance))
+                            )
+                    );
+                }
             }
         }));
         buttons.add(new UIButton(10, 73, 3, 3, (player, pos) -> {
-            this.stats.totalPayOut += this.ram.coin;
-            player.sendMessage(
-                    Component.text().append(
-                            Component.text("メダル払い出し"),
-                            Component.newline(),
-                            Component.text("総ゲーム数: " + ram.gameCount),
-                            Component.newline(),
-                            Component.text("総メダル数: " + ram.coin)
-                    )
-            );
-            this.stop(player);
-        }));
-        buttons.add(new UIButton(116, 46, 4, 4, (player, pos) -> {
-            if (MedalBank.canTakeMedal(player.getUniqueId(), SlotMachine.getPluginConfig().lend.count)) {
-                MedalBank.takeMedal(player.getUniqueId(), SlotMachine.getPluginConfig().lend.count);
-                this.ram.payOut += SlotMachine.getPluginConfig().lend.count;
+            if (getStatus() == Status.IDLE && ram.payOut < 1) {
+                this.stats.totalPayOut += this.ram.coin;
                 player.sendMessage(
                         Component.text().append(
-                                Component.text("貯メダルからメダルを引き出しました"),
+                                Component.text("メダル払い出し"),
                                 Component.newline(),
-                                Component.text("残高: " + MedalBank.getMedal(player.getUniqueId()))
+                                Component.text("総ゲーム数: " + ram.gameCount),
+                                Component.newline(),
+                                Component.text("総メダル数: " + ram.coin)
                         )
                 );
-            } else {
-                player.sendMessage(
-                        Component.text().color(TextColor.color(0xf72424)).append(
-                                Component.text("貯メダルが足りないか、今日の上限に達しています"),
-                                Component.newline(),
-                                Component.text("貯メダル: " + MedalBank.getMedal(player.getUniqueId()))
-                        )
-                );
+                this.stop(player);
+            }
+        }));
+        buttons.add(new UIButton(116, 46, 4, 4, (player, pos) -> {
+            if (getStatus() == Status.IDLE && ram.payOut < 1) {
+                if (MedalBank.canTakeMedal(player.getUniqueId(), SlotMachine.getPluginConfig().lend.count)) {
+                    MedalBank.takeMedal(player.getUniqueId(), SlotMachine.getPluginConfig().lend.count);
+                    this.ram.payOut += SlotMachine.getPluginConfig().lend.count;
+                    player.sendMessage(
+                            Component.text().append(
+                                    Component.text("貯メダルからメダルを引き出しました"),
+                                    Component.newline(),
+                                    Component.text("残高: " + MedalBank.getMedal(player.getUniqueId()))
+                            )
+                    );
+                } else {
+                    player.sendMessage(
+                            Component.text().color(TextColor.color(0xf72424)).append(
+                                    Component.text("貯メダルが足りないか、今日の上限に達しています"),
+                                    Component.newline(),
+                                    Component.text("貯メダル: " + MedalBank.getMedal(player.getUniqueId()))
+                            )
+                    );
+                }
             }
         }));
         return buttons;
@@ -468,7 +501,8 @@ public class Slot extends ParaMachine {
 
         public void step() {
             for (Wheel wheel : this.wheels) {
-                wheel.step();
+                if ((tick + wheel.getPos().getIndex()) % 2 == 1)
+                    wheel.step();
             }
         }
 
@@ -631,15 +665,6 @@ public class Slot extends ParaMachine {
                     highlightFlag = flag;
                     highlightLine = this.getFlagLine(flag);
                     chain.execute();
-
-                    if (isBonusNow()) {
-                        ram.bonusCoinCount += estFlag.getCoin();
-                        if (ram.bonusCoinCount >= (ram.bonusFlag.isBigBonus() ? 280 : ram.bonusFlag.isRegularBonus() ? 98 : 0)) {
-                            ram.bonusFlag = null;
-                            ram.bonusCoinCount = 0;
-                            ram.bonusAnnounced = false;
-                        }
-                    }
 
                     if (flag.isBonus()) {
                         TaskChain<?> c = SlotMachine.newSharedChain(key);

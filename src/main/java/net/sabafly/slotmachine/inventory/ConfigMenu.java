@@ -22,7 +22,7 @@ public class ConfigMenu extends ParaInventory {
     private final Slot slotEntity;
 
     public ConfigMenu(Plugin plugin, Slot entity) {
-        super(plugin,9, Component.text("config menu"));
+        super(plugin, 9, Component.text("config menu"));
         this.entity = null;
         this.slotEntity = entity;
         update(entity);
@@ -39,10 +39,11 @@ public class ConfigMenu extends ParaInventory {
         ItemMeta meta = closeItem.getItemMeta();
         meta.displayName(Component.text("cancel game"));
 
-        if (entity.getStatus().isPlaying()) meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "CANCEL_GAME");
+        if (entity.getStatus().isPlaying())
+            meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "CANCEL_GAME");
 
         closeItem.setItemMeta(meta);
-        inventory.setItem(0,closeItem);
+        inventory.setItem(0, closeItem);
 
         ItemStack flagItem = new ItemStack(Material.WHITE_BANNER);
         meta = flagItem.getItemMeta();
@@ -52,7 +53,7 @@ public class ConfigMenu extends ParaInventory {
         meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "TOGGLE_FLAG");
 
         flagItem.setItemMeta(meta);
-        inventory.setItem(1,flagItem);
+        inventory.setItem(1, flagItem);
 
         ItemStack settingItem = new ItemStack(Material.CHEST);
         meta = settingItem.getItemMeta();
@@ -62,7 +63,7 @@ public class ConfigMenu extends ParaInventory {
         meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "TOGGLE_SETTING");
 
         settingItem.setItemMeta(meta);
-        inventory.setItem(2,settingItem);
+        inventory.setItem(2, settingItem);
 
         ItemStack debugItem = new ItemStack(Material.BEDROCK);
         meta = debugItem.getItemMeta();
@@ -72,7 +73,16 @@ public class ConfigMenu extends ParaInventory {
         meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "TOGGLE_DEBUG");
 
         debugItem.setItemMeta(meta);
-        inventory.setItem(3,debugItem);
+        inventory.setItem(3, debugItem);
+
+        ItemStack resetItem = new ItemStack(Material.BARRIER);
+        meta = resetItem.getItemMeta();
+        meta.displayName(Component.text("reset"));
+
+        meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "RESET");
+
+        resetItem.setItemMeta(meta);
+        inventory.setItem(4, resetItem);
 
         ItemStack DestroyItem = new ItemStack(Material.TNT);
         meta = DestroyItem.getItemMeta();
@@ -81,7 +91,7 @@ public class ConfigMenu extends ParaInventory {
         meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "DESTROY");
 
         DestroyItem.setItemMeta(meta);
-        inventory.setItem(8,DestroyItem);
+        inventory.setItem(8, DestroyItem);
 
         ItemStack item = new ItemStack(Material.PAPER);
         meta = item.getItemMeta();
@@ -91,19 +101,22 @@ public class ConfigMenu extends ParaInventory {
                 Component.text("flag: " + (entity.getFlag() != null ? entity.getFlag() : "null")),
                 Component.text("setting_id: " + entity.getSettingId()),
                 Component.text("setting: " + (entity.getSetting() != null ? entity.getSetting() : "null")),
-                Component.text("debug: " + entity.isDebug())/*,
-                Component.text("playing: " + entity.isPlaying()),
-                Component.text("totalPayIn: " + entity.getTotalPayIn()),
-                Component.text("totalPayOut: " + entity.getTotalPayOut()),
-                Component.text("totalBonus: " + entity.getTotalBonus())*/
+                Component.text("debug: " + entity.isDebug()),
+                Component.text("status: " + entity.getStatus()),
+                Component.text("totalPayIn: " + entity.getStats().totalPayIn),
+                Component.text("totalPayOut: " + entity.getStats().totalPayOut),
+                Component.text("totalBonus: " + entity.getStats().totalBonusCount),
+                Component.text("totalBonusPayOut: " + entity.getStats().totalBonusPayOut),
+                Component.text("totalBigBonus: " + entity.getStats().totalBigBonusCount),
+                Component.text("totalGameCount: " + entity.getStats().totalGameCount)
         ));
 
         item.setItemMeta(meta);
-        inventory.setItem(7,item);
+        inventory.setItem(7, item);
     }
 
     public ConfigMenu(Plugin plugin, Entity entity) {
-        super(plugin,9, Component.text("create slot"));
+        super(plugin, 9, Component.text("create slot"));
         this.entity = entity;
         this.slotEntity = null;
         Inventory inventory = getInventory();
@@ -116,7 +129,7 @@ public class ConfigMenu extends ParaInventory {
 
         item.setItemMeta(meta);
 
-        inventory.setItem(4,item);
+        inventory.setItem(4, item);
     }
 
     @Nullable

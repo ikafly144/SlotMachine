@@ -59,8 +59,10 @@ public class MedalBank {
     public static void takeMedal(UUID player, long medal) {
         if (medalMap.containsKey(player)) {
             medalMap.put(player, medalMap.get(player) - medal);
+            medalTakeMap.put(player, medalTakeMap.getOrDefault(player, 0L) + medal);
         } else {
             medalMap.put(player, -medal);
+            medalTakeMap.put(player, medal);
         }
     }
 
