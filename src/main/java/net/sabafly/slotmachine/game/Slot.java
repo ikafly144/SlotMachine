@@ -2,6 +2,7 @@ package net.sabafly.slotmachine.game;
 
 import co.aikar.taskchain.TaskChain;
 import co.aikar.taskchain.TaskChainTasks;
+import com.fasterxml.uuid.Generators;
 import dev.cerus.maps.api.Frame;
 import dev.cerus.maps.api.MapScreen;
 import dev.cerus.maps.api.font.MapFont;
@@ -132,7 +133,7 @@ public class Slot extends ParaMachine {
     }
 
     Slot(final WheelSet wheelSet, final SettingSet settings, final @NotNull MapScreen screen, final @NotNull Stats stats, final int setting) {
-        this(wheelSet, settings, screen, stats, setting, UUID.randomUUID());
+        this(wheelSet, settings, screen, stats, setting, Generators.timeBasedEpochGenerator().generate());
     }
 
     Slot(final WheelSet wheelSet, final SettingSet settings, final @NotNull MapScreen screen, final @NotNull Stats stats, final int setting, final UUID uuid) {

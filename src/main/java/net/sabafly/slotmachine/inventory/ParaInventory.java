@@ -11,11 +11,6 @@ public abstract class ParaInventory implements InventoryHolder {
     private final Inventory inventory;
     private final Plugin plugin;
 
-    public ParaInventory(Plugin plugin, Integer size) {
-        this.plugin = plugin;
-        this.inventory = this.plugin.getServer().createInventory(this, size);
-    }
-
     public ParaInventory(Plugin plugin, Integer size, Component component) {
         this.plugin = plugin;
         this.inventory = this.plugin.getServer().createInventory(this, size, component);

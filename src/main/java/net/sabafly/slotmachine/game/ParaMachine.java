@@ -1,8 +1,7 @@
 package net.sabafly.slotmachine.game;
 
+import com.fasterxml.uuid.Generators;
 import dev.cerus.maps.api.MapScreen;
-import dev.cerus.maps.api.graphics.ColorCache;
-import dev.cerus.maps.api.graphics.MapGraphics;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -19,7 +18,7 @@ public abstract class ParaMachine implements Machine<ParaMachine> {
     final UUID uuid;
 
     public ParaMachine(final MapScreen screen) {
-        this(screen, UUID.randomUUID());
+        this(screen, Generators.timeBasedEpochGenerator().generate());
     }
 
     public ParaMachine(final MapScreen screen, UUID uuid) {

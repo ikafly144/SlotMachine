@@ -41,6 +41,7 @@ dependencies {
     implementation 'me.lucko:commodore:2.2'
     implementation "co.aikar:taskchain-bukkit:3.7.2"
     implementation "org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT"
+    implementation 'com.fasterxml.uuid:java-uuid-generator:4.3.0'
 }
 
 if (hasProperty('buildScan')) {
@@ -85,6 +86,7 @@ shadowJar {
     minimize()
     relocate 'me.lucko.commodore', 'net.sabafly.slotmachine.commodore'
     relocate 'co.aikar.taskchain', 'net.sabafly.slotmachine.taskchain'
+    relocate 'com.fasterxml.uuid', 'net.sabafly.slotmachine.uuid'
 }
 
 tasks {
