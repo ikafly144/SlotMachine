@@ -215,6 +215,7 @@ public class Slot extends ParaMachine {
 
     @Override
     public void run() {
+        wheels.step();
         if (!LocalDateTime.now().isAfter(lastClickedTime.plusSeconds(30)) || tick % 20 == 0) {
             final MapGraphics<?, ?> graphics = getScreen().getGraphics();
             render(graphics);
@@ -242,7 +243,6 @@ public class Slot extends ParaMachine {
         }
 
         super.run();
-        wheels.step();
     }
 
     @Override
