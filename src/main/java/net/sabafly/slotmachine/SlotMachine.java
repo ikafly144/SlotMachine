@@ -31,8 +31,22 @@ public final class SlotMachine extends JavaPlugin {
     private static Configurations config = null;
     private static boolean isFloodgate = false;
 
+    private static boolean isPaper() {
+        try {
+            Class.forName("io.papermc.paper.configuration.Configuration");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     @Override
     public void onEnable() {
+        if (!isPaper()) {
+            logger.severe("This plugin is only supported on PaperMC");
+            this.getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
         try {
             reloadPluginConfig();
             MedalBank.load(getDataFolder());
@@ -42,7 +56,7 @@ public final class SlotMachine extends JavaPlugin {
             this.getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        logger.info(String.format("enabled (version %s)", getDescription().getVersion()));
+        logger.info("enabled (version %s)".formatted(getPluginMeta().getVersion()));
         if (!setupEconomy() ) {
             logger.severe("disabled due to no Vault dependency found!");
             getServer().getPluginManager().disablePlugin(this);
@@ -86,7 +100,7 @@ public final class SlotMachine extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
-        logger.info(String.format("disabled (version %s)", getDescription().getVersion()));
+        logger.info("disabled (version %s)".formatted(getPluginMeta().getVersion()));
     }
 
     public CommodoreHandler commodoreHandler() { return commodoreHandler; }

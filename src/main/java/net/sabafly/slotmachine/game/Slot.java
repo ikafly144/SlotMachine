@@ -29,6 +29,7 @@ import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
@@ -629,7 +630,7 @@ public class Slot extends ParaMachine {
             return 0;
         }
 
-        public void stop(Pos pos, Flag estFlag) {
+        public void stop(@NotNull  Pos pos, @Nullable Flag estFlag) {
             int stepCount = getStepCount(estFlag, pos);
             getWheel(pos).stop(stepCount);
             if (isStopped()) {
@@ -640,6 +641,9 @@ public class Slot extends ParaMachine {
 
                 if (!ram.bonusAnnounced && estFlag != null && estFlag.isBonus()) {
                     announceBonus(estFlag);
+                    new Song(List.of(
+                            new Song.Note(Sound.BLOCK_PISTON_CONTRACT, 1, 0, 1)
+                    )).play(screen.getLocation());
                 }
 
                 if (flag == null) {
@@ -687,9 +691,6 @@ public class Slot extends ParaMachine {
 
         private void announceBonus(Flag estFlag) {
             ram.bonusAnnounced = true;
-            new Song(List.of(
-                    new Song.Note(Sound.BLOCK_PISTON_CONTRACT, 1, 0, 1)
-            )).play(screen.getLocation());
             estFlag.withoutCherry();
         }
 
@@ -715,7 +716,7 @@ public class Slot extends ParaMachine {
             ram.replay = false;
             if (ram.estFlag == null || !ram.estFlag.isBonus())
                 ram.estFlag = Flag.genFlag(random, isBonusNow() ? Setting.Bonus : settings.get(settingId));
-            if (!ram.bonusAnnounced && ram.estFlag != null && ram.estFlag.isBonus()) {
+            if (!ram.bonusAnnounced && ram.estFlag != null && ram.estFlag.isBonus() && ram.estFlag.isEarlyAnnounce()) {
                 announceBonus(ram.estFlag);
             }
             TaskChain<?> chain = SlotMachine.newChain();

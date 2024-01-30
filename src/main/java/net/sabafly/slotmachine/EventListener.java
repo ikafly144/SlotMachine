@@ -2,6 +2,7 @@ package net.sabafly.slotmachine;
 
 import dev.cerus.maps.api.MapScreen;
 import dev.cerus.maps.api.event.PlayerClickScreenEvent;
+import dev.cerus.maps.api.graphics.CompositeColorCache;
 import dev.cerus.maps.util.Vec2;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.sound.Sound;
@@ -17,10 +18,7 @@ import net.sabafly.slotmachine.inventory.ExchangeMenu;
 import net.sabafly.slotmachine.inventory.PrizeMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.HumanEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -43,6 +41,10 @@ import java.util.UUID;
 
 public class EventListener implements Listener {
 
+    static {
+        CompositeColorCache.disable();
+    }
+
     private final SlotMachine plugin;
 
     public EventListener(SlotMachine plugin) {
@@ -55,6 +57,12 @@ public class EventListener implements Listener {
 
         Entity entity = event.getRightClicked();
         if (!(List.of(EntityType.ITEM_FRAME,EntityType.GLOW_ITEM_FRAME).contains(entity.getType()))) return;
+
+        if (!(entity instanceof ItemFrame itemFrame)) return;
+
+        if (!itemFrame.getItem().isEmpty()) return;
+
+        if (itemFrame.getFacing().getModY() != 0) return;
 
         if (Bukkit.getEntity(entity.getUniqueId())==null) {
             event.setCancelled(true);

@@ -269,86 +269,6 @@ public class SlotRegistry {
 
     }
 
-    @Deprecated(forRemoval = true)
-    public enum ReelSet {
-        LEFT(new WheelPattern[]{
-                GRAPE,
-                REPLAY,
-                GRAPE,
-                BAR,
-                CHERRY,
-                GRAPE,
-                REPLAY,
-                GRAPE,
-                CLOWN,
-                SEVEN,
-                GRAPE,
-                REPLAY,
-                GRAPE,
-                CHERRY,
-                BAR,
-                GRAPE,
-                REPLAY,
-                GRAPE,
-                REPLAY,
-                SEVEN,
-                BELL,
-        }),
-        CENTER(
-                new WheelPattern[]{
-                        CLOWN,
-                        CHERRY,
-                        GRAPE,
-                        BAR,
-                        REPLAY,
-                        CHERRY,
-                        GRAPE,
-                        BELL,
-                        REPLAY,
-                        CHERRY,
-                        GRAPE,
-                        BAR,
-                        REPLAY,
-                        CHERRY,
-                        GRAPE,
-                        BELL,
-                        REPLAY,
-                        CHERRY,
-                        GRAPE,
-                        SEVEN,
-                        REPLAY,
-                }),
-        RIGHT(new WheelPattern[]{
-                REPLAY,
-                BELL,
-                CLOWN,
-                GRAPE,
-                REPLAY,
-                BELL,
-                CLOWN,
-                GRAPE,
-                REPLAY,
-                BELL,
-                CLOWN,
-                GRAPE,
-                REPLAY,
-                BELL,
-                CLOWN,
-                GRAPE,
-                REPLAY,
-                BELL,
-                BAR,
-                SEVEN,
-                GRAPE,
-        });
-        public final WheelPattern[] wheelPatterns;
-
-        ReelSet(WheelPattern[] wheelPatterns) {
-            this.wheelPatterns = wheelPatterns;
-        }
-
-    }
-
     public enum WheelPattern {
         SEVEN(AssetImage.SEVEN),
         BAR(AssetImage.BAR),
@@ -407,10 +327,6 @@ public class SlotRegistry {
             return null;
         }
 
-        public static Flag genFlag(final RandomGenerator rng, LegacySetting setting) {
-            throw new UnsupportedOperationException();
-        }
-
         @Nullable
         public static Flag genFlag(final RandomGenerator rng, Setting setting) {
             int i = rng.nextInt(65536);
@@ -435,48 +351,7 @@ public class SlotRegistry {
             return null;
         }
 
-        @Deprecated
-        public static final int[][] stopLines = {
-                {0, 0, 0},
-                {1, 1, 1},
-                {2, 2, 2},
-                {0, 1, 2},
-                {2, 1, 0},
-        };
-
         boolean hasCherry = false;
-
-        @Deprecated
-        public static boolean hasFlag(int left, int center, int right) {
-            Flag flag = getFlag(left, center, right);
-            return flag != null;
-        }
-
-        @Deprecated
-        public static Flag getFlag(int left, int center, int right) {
-            for (int[] pattern : stopLines) {
-                WheelPattern leftWheelPattern = ReelSet.LEFT.wheelPatterns[(left + pattern[0]) % ReelSet.LEFT.wheelPatterns.length];
-                WheelPattern centerWheelPattern = ReelSet.CENTER.wheelPatterns[(center + pattern[1]) % ReelSet.CENTER.wheelPatterns.length];
-                WheelPattern rightWheelPattern = ReelSet.RIGHT.wheelPatterns[(right + pattern[2]) % ReelSet.RIGHT.wheelPatterns.length];
-
-                Flag flag = getFlag(leftWheelPattern, centerWheelPattern, rightWheelPattern);
-                if (flag != null) return flag;
-            }
-            return null;
-        }
-
-        @Deprecated
-        public static int[] getStopLine(int left, int center, int right) {
-            for (int[] stopLine : stopLines) {
-                WheelPattern leftWheelPattern = ReelSet.LEFT.wheelPatterns[(left + stopLine[0]) % ReelSet.LEFT.wheelPatterns.length];
-                WheelPattern centerWheelPattern = ReelSet.CENTER.wheelPatterns[(center + stopLine[1]) % ReelSet.CENTER.wheelPatterns.length];
-                WheelPattern rightWheelPattern = ReelSet.RIGHT.wheelPatterns[(right + stopLine[2]) % ReelSet.RIGHT.wheelPatterns.length];
-
-                Flag flag = getFlag(leftWheelPattern, centerWheelPattern, rightWheelPattern);
-                if (flag != null) return stopLine;
-            }
-            return null;
-        }
 
         Flag withCherry() {
             hasCherry = true;
@@ -514,50 +389,6 @@ public class SlotRegistry {
         public boolean isEarlyAnnounce() {
             return earlyAnnounce;
         }
-    }
-
-    @Deprecated
-    public enum LegacySetting {
-        SETTING_1(128, 96, 58, 48, 1839, 64, 8192, 8977, 64),
-        SETTING_2(169, 152, 58, 53, 1839, 64, 8192, 8977, 64),
-        SETTING_3(196, 164, 58, 60, 1839, 64, 8192, 8977, 64),
-        SETTING_4(221, 198, 60, 62, 1839, 64, 10886, 8977, 64),
-        SETTING_5(255, 245, 60, 76, 1839, 64, 10886, 8977, 64),
-        SETTING_6(255, 255, 60, 76, 1839, 64, 11338, 8977, 64),
-        BONUS(0, 0, 0, 0, 0, 8192, 16384, 8192, 16384),
-        DEBUG(0, 0, 32768, 32768, 0, 0, 0, 0, 0),
-        ;
-
-        public static LegacySetting getSetting(int setting) {
-            return values()[(setting - 1) % 6];
-        }
-
-        public final int BB;
-        public final int RB;
-        public final int C_BB;
-        public final int C_RB;
-        public final int cherry;
-        public final int bell;
-        public final int grape;
-        public final int replay;
-        public final int clown;
-
-        LegacySetting(int BB, int RB, int C_BB, int C_RB, int cherry, int bell, int grape, int replay, int clown) {
-            this.BB = BB;
-            this.RB = RB;
-            this.C_BB = C_BB;
-            this.C_RB = C_RB;
-            this.cherry = cherry;
-            this.bell = bell;
-            this.grape = grape;
-            this.replay = replay;
-            this.clown = clown;
-        }
-
-        public int getIndex() {
-            return this.ordinal() + 1;
-        }
-
     }
 
     public static ItemStack getTicket(long coin) {
