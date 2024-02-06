@@ -157,10 +157,10 @@ public class SlotRegistry {
         }
     }
 
-    public record Setting(int big, int reg, int big_c, int reg_c, int bell, int cherry, int grape, int replay,
-                          int clown) {
+    public record Setting(int big, int reg, int big_c, int reg_c, int bell, int cherry,
+                          int grape, int replay, int clown) {
         public static Setting Debug = new Setting(0, 0, 32768, 32768, 0, 0, 0, 0, 0);
-        public static Setting Bonus = new Setting(0, 0, 0, 0, 16384, 0, 32768, 8192, 8192);
+        public static Setting Bonus = new Setting(0, 0, 0, 0, 0, 0, 57344, 8192, 0);
     }
 
     public static class Wheel {

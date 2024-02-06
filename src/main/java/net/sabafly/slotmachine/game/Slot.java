@@ -284,19 +284,19 @@ public class Slot extends ParaMachine {
     public List<UIButton> getButtons() {
         List<UIButton> buttons = new ArrayList<>();
         buttons.add(new UIButton(27, 64, 23, 14, (player, pos) -> {
-            if (getStatus().isPlaying()) {
+            if (getStatus().isPlaying() && wheels.isRunning(Pos.LEFT)) {
                 Song.CLICK_CHORD.play(getScreen().getLocation());
                 wheels.stop(Pos.LEFT, ram.estFlag);
             }
         }));
         buttons.add(new UIButton(52, 64, 23, 14, (player, pos) -> {
-            if (getStatus().isPlaying()) {
+            if (getStatus().isPlaying() && wheels.isRunning(Pos.CENTER)) {
                 Song.CLICK_CHORD.play(getScreen().getLocation());
                 wheels.stop(Pos.CENTER, ram.estFlag);
             }
         }));
         buttons.add(new UIButton(77, 64, 23, 14, (player, pos) -> {
-            if (getStatus().isPlaying()) {
+            if (getStatus().isPlaying() && wheels.isRunning(Pos.RIGHT)) {
                 Song.CLICK_CHORD.play(getScreen().getLocation());
                 wheels.stop(Pos.RIGHT, ram.estFlag);
             }
@@ -523,12 +523,20 @@ public class Slot extends ParaMachine {
             return list.toArray(new Wheel[]{});
         }
 
+        private boolean isRunning(Pos pos) {
+            return getWheel(pos).isRunning();
+        }
+
+        private boolean isRunning() {
+            return Arrays.stream(wheels).anyMatch(Wheel::isRunning);
+        }
+
         private boolean isStopped(Pos pos) {
             return getWheel(pos).isStopped();
         }
 
         private boolean isStopped() {
-            return stoppedWheels() == 3;
+            return Arrays.stream(wheels).allMatch(Wheel::isStopped);
         }
 
         private Flag getFlagShifted(Pos pos, int shift) {
