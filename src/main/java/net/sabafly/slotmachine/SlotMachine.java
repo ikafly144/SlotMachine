@@ -3,11 +3,13 @@ package net.sabafly.slotmachine;
 import co.aikar.taskchain.BukkitTaskChainFactory;
 import co.aikar.taskchain.TaskChain;
 import co.aikar.taskchain.TaskChainFactory;
+import lombok.Getter;
 import me.lucko.commodore.CommodoreProvider;
 import net.milkbowl.vault.economy.Economy;
 import net.sabafly.slotmachine.commands.CommodoreHandler;
 import net.sabafly.slotmachine.commands.SlotMachineCommand;
 import net.sabafly.slotmachine.configuration.Configurations;
+import net.sabafly.slotmachine.configuration.Messages;
 import net.sabafly.slotmachine.configuration.Transformations;
 import net.sabafly.slotmachine.game.MedalBank;
 import net.sabafly.slotmachine.game.ScreenManager;
@@ -29,6 +31,8 @@ public final class SlotMachine extends JavaPlugin {
     private CommodoreHandler commodoreHandler;
     private static Economy econ = null;
     private static Configurations config = null;
+    @Getter
+    private static Messages messages = null;
     private static boolean isFloodgate = false;
 
     private static boolean isPaper() {
@@ -134,15 +138,25 @@ public final class SlotMachine extends JavaPlugin {
     }
 
     public void reloadPluginConfig() throws ConfigurateException {
-        final YamlConfigurationLoader loader = YamlConfigurationLoader.builder()
+        // 設定ファイル
+        final YamlConfigurationLoader configLoader = YamlConfigurationLoader.builder()
                 .path(new File(getPlugin().getDataFolder(), "config.yml").toPath())
                 .indent(2)
                 .headerMode(HeaderMode.PRESET)
                 .nodeStyle(NodeStyle.BLOCK)
                 .build();
-        CommentedConfigurationNode node = Transformations.updateNode(loader.load());
-        loader.save(node);
+        CommentedConfigurationNode node = Transformations.updateNode(configLoader.load());
+        configLoader.save(node);
         config = node.get(Configurations.class, new Configurations());
+        // メッセージファイル
+        final YamlConfigurationLoader messagesLoader = YamlConfigurationLoader.builder()
+                .path(new File(getPlugin().getDataFolder(), "messages.yml").toPath())
+                .indent(2)
+                .headerMode(HeaderMode.PRESET)
+                .nodeStyle(NodeStyle.BLOCK)
+                .build();
+        node = messagesLoader.load();
+        messages = node.get(Messages.class, new Messages());
     }
 
     public static SlotMachine getPlugin() {

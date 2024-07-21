@@ -1,17 +1,13 @@
 plugins {
     id 'java'
-}
-
-plugins {
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
-}
-
-plugins {
-    id("xyz.jpenilla.run-paper") version "2.2.2"
+    id("io.papermc.paperweight.userdev") version "1.7.1"
+    // Check for new versions at https://plugins.gradle.org/plugin/io.papermc.paperweight.userdev
+    id("xyz.jpenilla.run-paper") version "2.3.0"
+    id 'io.github.goooler.shadow' version '8.1.7'
 }
 
 group = 'net.sabafly'
-version = '0.1.0'
+version = '0.2.0'
 
 repositories {
     mavenCentral()
@@ -24,24 +20,30 @@ repositories {
         url = "https://oss.sonatype.org/content/groups/public/"
     }
     maven {
-        url = uri("https://repo.opencollab.dev/main/")
+        name = "sonatype-oss-snapshots1"
+        url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
     }
-    maven { url 'https://libraries.minecraft.net/' }
-    maven { url "https://repo.dmulloy2.net/repository/public/" }
-    maven { url "https://repo.aikar.co/content/groups/aikar/" }
-    maven { url 'https://jitpack.io' }
+    maven { url = "https://repo.opencollab.dev/main/" }
+    maven { url = 'https://libraries.minecraft.net/' }
+    maven { url = "https://repo.dmulloy2.net/repository/public/" }
+    maven { url = "https://repo.aikar.co/content/groups/aikar/" }
+    maven { url = 'https://jitpack.io' }
+    maven { url = 'https://ci.mg-dev.eu/plugin/repository/everything' }
 }
 
 dependencies {
-    compileOnly "io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT"
-    compileOnly 'dev.cerus.maps:common:3.8.1'
-    compileOnly 'dev.cerus.maps:plugin:3.8.1'
+    compileOnly 'dev.cerus.maps:common:3.8.5'
+    compileOnly 'dev.cerus.maps:plugin:3.8.5'
     compileOnly "com.github.MilkBowl:VaultAPI:1.7.1"
     compileOnly 'org.geysermc.floodgate:api:2.2.2-SNAPSHOT'
     implementation 'me.lucko:commodore:2.2'
     implementation "co.aikar:taskchain-bukkit:3.7.2"
     implementation "org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT"
     implementation 'com.fasterxml.uuid:java-uuid-generator:4.3.0'
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    compileOnly 'com.bergerkiller.bukkit:BKCommonLib:1.21-v1-SNAPSHOT'
+    paperweight.paperDevBundle("1.21-R0.1-SNAPSHOT")
 }
 
 if (hasProperty('buildScan')) {
@@ -51,7 +53,7 @@ if (hasProperty('buildScan')) {
     }
 }
 
-def targetJavaVersion = 17
+def targetJavaVersion = 21
 java {
     def javaVersion = JavaVersion.toVersion(targetJavaVersion)
     sourceCompatibility = javaVersion
@@ -71,7 +73,7 @@ processResources {
     def props = [version: version]
     inputs.properties props
     filteringCharset 'UTF-8'
-    filesMatching('plugin.yml') {
+    filesMatching('paper-plugin.yml') {
         expand props
     }
 }
@@ -92,14 +94,17 @@ shadowJar {
 tasks {
     runServer {
         downloadPlugins {
-            github("cerus", "maps", "3.8.3", "maps-plugin.jar")
+//            github("cerus", "maps", "3.8.4", "maps-plugin.jar")
             github("MilkBowl", "Vault", "1.7.3", "Vault.jar")
-            url("https://api.spiget.org/v2/resources/71210/download")
-            url("https://ci.dmulloy2.net/job/ProtocolLib//lastBuild/artifact/build/libs/ProtocolLib.jar")
+            github("Jikoo", "OpenInv", "4.4.5", "OpenInv.jar")
+            url("https://ci.mg-dev.eu/job/BKCommonLib/1759/artifact/build/BKCommonLib-1.21-v1-SNAPSHOT-1759.jar")
+            modrinth("emeraldbank", "0.2.0")
+//            url("https://api.spiget.org/v2/resources/71210/download")
+//            url("https://ci.dmulloy2.net/job/ProtocolLib//lastBuild/artifact/build/libs/ProtocolLib.jar")
         }
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("1.20.4")
+        minecraftVersion("1.21")
     }
 }

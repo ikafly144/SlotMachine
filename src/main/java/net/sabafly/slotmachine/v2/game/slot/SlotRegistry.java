@@ -1,31 +1,31 @@
-package net.sabafly.slotmachine.game.slot;
+package net.sabafly.slotmachine.v2.game.slot;
 
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.sabafly.slotmachine.SlotMachine;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.image.BufferedImage;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.random.RandomGenerator;
 
-import static net.sabafly.slotmachine.game.slot.SlotRegistry.WheelPattern.*;
+import static net.sabafly.slotmachine.v2.game.slot.WheelPattern.*;
 
-public class SlotRegistry {
+public enum SlotRegistry {
+    JUGGLER,
+    ;
 
+    @Getter
+    @Deprecated
     public enum WheelSet {
         JUGGLER(
                 new WheelPattern[]{
@@ -109,19 +109,9 @@ public class SlotRegistry {
             this.right = right;
         }
 
-        public WheelPattern[] getLeft() {
-            return left;
-        }
-
-        public WheelPattern[] getCenter() {
-            return center;
-        }
-
-        public WheelPattern[] getRight() {
-            return right;
-        }
     }
 
+    @Deprecated
     public enum SettingSet {
         JUGGLER(
                 new Setting(128, 96, 58, 48, 1839, 64, 8192, 8977, 64),
@@ -157,141 +147,8 @@ public class SlotRegistry {
         }
     }
 
-    public record Setting(int big, int reg, int big_c, int reg_c, int bell, int cherry,
-                          int grape, int replay, int clown) {
-        public static Setting Debug = new Setting(0, 0, 32768, 32768, 0, 0, 0, 0, 0);
-        public static Setting Bonus = new Setting(0, 0, 0, 0, 0, 0, 57344, 8192, 0);
-    }
-
-    public static class Wheel {
-        final WheelPattern[] wheelPatterns;
-        boolean isRunning = false;
-        int count;
-        final Pos pos;
-
-        public Wheel(WheelPattern[] wheelPatterns, Pos pos) {
-            this.wheelPatterns = wheelPatterns;
-            this.pos = pos;
-            this.count = ThreadLocalRandom.current().nextInt(wheelPatterns.length);
-        }
-
-        public BufferedImage getImage(final int range) {
-            return getPattern(range).getImage();
-        }
-
-        public WheelPattern[] getPatterns() {
-            ArrayList<SlotRegistry.WheelPattern> list = new ArrayList<>();
-            for (int i = 0; i < 7; i++) {
-                list.add(getPattern(i));
-            }
-            return list.toArray(new SlotRegistry.WheelPattern[]{});
-        }
-
-        public WheelPattern getPattern(int i) {
-            return wheelPatterns[(count + i) % getLength()];
-        }
-
-        public int getLength() {
-            return wheelPatterns.length;
-        }
-
-        public Pos getPos() {
-            return pos;
-        }
-
-        public boolean isRunning() {
-            return isRunning;
-        }
-
-        public boolean isStopped() {
-            return !isRunning();
-        }
-
-        public void step() {
-            if (isRunning()) count++;
-        }
-
-        public void stop(int i) {
-            isRunning = false;
-            count += i;
-        }
-
-        public void start() {
-            isRunning = true;
-        }
-
-        public long getCount() {
-            return count;
-        }
-    }
-
-    public enum Pos {
-        LEFT,
-        CENTER,
-        RIGHT,
-        ;
-
-        public int getIndex() {
-            return this.ordinal();
-        }
-    }
-
-    public enum Line {
-        // スロットの揃うライン
-        TOP(2, 2, 2),
-        CENTER(1, 1, 1),
-        BOTTOM(0, 0, 0),
-        LEFT(0, 1, 2),
-        RIGHT(2, 1, 0),
-        ;
-        final int left;
-        final int center;
-        final int right;
-
-        Line(int left, int center, int right) {
-            this.left = left;
-            this.center = center;
-            this.right = right;
-        }
-
-        public int get(Pos pos) {
-            return get(pos.getIndex());
-        }
-
-        public int get(int i) {
-            return switch (i) {
-                case 0 -> left;
-                case 1 -> center;
-                case 2 -> right;
-                default -> -1;
-            };
-        }
-
-    }
-
-    public enum WheelPattern {
-        SEVEN(AssetImage.SEVEN),
-        BAR(AssetImage.BAR),
-        CHERRY(AssetImage.CHERRY),
-        BELL(AssetImage.BELL),
-        GRAPE(AssetImage.GRAPE),
-        CLOWN(AssetImage.CLOWN),
-        REPLAY(AssetImage.REPLAY),
-        ;
-
-        private final AssetImage image;
-
-        WheelPattern(AssetImage image) {
-            this.image = image;
-        }
-
-        public BufferedImage getImage() {
-            return image.getImage();
-        }
-
-    }
-
-    public enum Flag {
+    @Deprecated
+    public enum LegacyFlag {
         F_BB(0, SEVEN, SEVEN, SEVEN),
         F_RB(0, SEVEN, SEVEN, BAR),
         F_CHERRY(1, CHERRY),
@@ -301,24 +158,27 @@ public class SlotRegistry {
         F_CLOWN(10, CLOWN, CLOWN, CLOWN),
         ;
 
+        @Getter
         private final WheelPattern[] wheelPatterns;
+        @Getter
         private final int coin;
+        @Getter
         private boolean earlyAnnounce = false;
 
-        Flag(int coin, WheelPattern... wheelPatterns) {
+        LegacyFlag(int coin, WheelPattern... wheelPatterns) {
             this.coin = coin;
             this.wheelPatterns = wheelPatterns;
         }
 
-        public Flag randomEarlyAnnounce(RandomGenerator rng) {
+        public LegacyFlag randomEarlyAnnounce(RandomGenerator rng) {
             // 四分の一の確率で早期告知
             earlyAnnounce = rng.nextInt(4) == 0;
             return this;
         }
 
-        public static Flag getFlag(WheelPattern... wheelPatterns) {
+        public static LegacyFlag getFlag(WheelPattern... wheelPatterns) {
             outer:
-            for (Flag flag : values()) {
+            for (LegacyFlag flag : values()) {
                 for (int i = 0; i < flag.getWheelPatterns().length; i++) {
                     if (wheelPatterns[i] != flag.getWheelPatterns()[i]) continue outer;
                 }
@@ -328,7 +188,7 @@ public class SlotRegistry {
         }
 
         @Nullable
-        public static Flag genFlag(final RandomGenerator rng, Setting setting) {
+        public static SlotRegistry.LegacyFlag genFlag(final RandomGenerator rng, Setting setting) {
             int i = rng.nextInt(65536);
             i -= setting.big();
             if (i < 0) return F_BB.randomEarlyAnnounce(rng);
@@ -353,7 +213,7 @@ public class SlotRegistry {
 
         boolean hasCherry = false;
 
-        Flag withCherry() {
+        LegacyFlag withCherry() {
             hasCherry = true;
             return this;
         }
@@ -378,17 +238,6 @@ public class SlotRegistry {
             return hasCherry || this == F_CHERRY;
         }
 
-        public WheelPattern[] getWheelPatterns() {
-            return wheelPatterns;
-        }
-
-        public int getCoin() {
-            return coin;
-        }
-
-        public boolean isEarlyAnnounce() {
-            return earlyAnnounce;
-        }
     }
 
     public static ItemStack getTicket(long coin) {
@@ -417,7 +266,7 @@ public class SlotRegistry {
             meta.displayName(Component.text("特殊景品（大）"));
             meta.getPersistentDataContainer().set(Key.TYPE, PersistentDataType.STRING, "PAY_OUT");
             meta.getPersistentDataContainer().set(Key.SIZE, PersistentDataType.STRING, "LARGE");
-            meta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
+            meta.addEnchant(Enchantment.INFINITY, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             item.setItemMeta(meta);
             return item;
@@ -429,7 +278,7 @@ public class SlotRegistry {
             meta.displayName(Component.text("特殊景品（中）"));
             meta.getPersistentDataContainer().set(Key.TYPE, PersistentDataType.STRING, "PAY_OUT");
             meta.getPersistentDataContainer().set(Key.SIZE, PersistentDataType.STRING, "MEDIUM");
-            meta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
+            meta.addEnchant(Enchantment.INFINITY, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             item.setItemMeta(meta);
             return item;
@@ -441,7 +290,7 @@ public class SlotRegistry {
             meta.displayName(Component.text("特殊景品（小）"));
             meta.getPersistentDataContainer().set(Key.TYPE, PersistentDataType.STRING, "PAY_OUT");
             meta.getPersistentDataContainer().set(Key.SIZE, PersistentDataType.STRING, "SMALL");
-            meta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
+            meta.addEnchant(Enchantment.INFINITY, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             item.setItemMeta(meta);
             return item;
@@ -449,23 +298,5 @@ public class SlotRegistry {
 
     }
 
-    private static final Plugin plugin = SlotMachine.getPlugin();
-
-    public static final class Key {
-        @NotNull
-        public static final NamespacedKey TYPE = new NamespacedKey(plugin, "type");
-        @NotNull
-        public static final NamespacedKey SIZE = new NamespacedKey(plugin, "size");
-        @NotNull
-        public static final NamespacedKey ACTION = new NamespacedKey(plugin, "action");
-        @NotNull
-        public static final NamespacedKey COIN = new NamespacedKey(plugin, "coin");
-        @NotNull
-        public static final NamespacedKey DATE = new NamespacedKey(plugin, "date");
-        @NotNull
-        public static final NamespacedKey PRICE = new NamespacedKey(plugin, "price");
-        @NotNull
-        public static final NamespacedKey UNIX_TIME = new NamespacedKey(plugin, "unixtime");
-    }
 
 }

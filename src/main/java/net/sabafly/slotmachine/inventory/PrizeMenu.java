@@ -2,10 +2,13 @@ package net.sabafly.slotmachine.inventory;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.sabafly.slotmachine.SlotMachine;
 import net.sabafly.slotmachine.configuration.Configurations;
 import net.sabafly.slotmachine.game.MedalBank;
-import net.sabafly.slotmachine.game.slot.SlotRegistry;
+import net.sabafly.slotmachine.v2.game.slot.Key;
+import net.sabafly.slotmachine.v2.game.slot.SlotRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -26,7 +29,7 @@ public class PrizeMenu extends ParaInventory {
     private int page;
     private long medal;
     public PrizeMenu(HumanEntity player, int page) {
-        super(SlotMachine.getPlugin(),54, Component.text("prize menu"));
+        super(SlotMachine.getPlugin(),54, MiniMessage.miniMessage().deserialize(SlotMachine.getMessages().prizeMenu));
         this.page = page;
         Long t = MedalBank.removeMedalAll(player);
         if (t == null) t = 0L;
@@ -39,8 +42,8 @@ public class PrizeMenu extends ParaInventory {
 
         final ItemStack glass = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
         final ItemMeta glassMeta = glass.getItemMeta();
-        glassMeta.displayName(Component.text("レシートをここに投入"));
-        glassMeta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "ADD_MEDAL");
+        glassMeta.displayName(MiniMessage.miniMessage().deserialize(SlotMachine.getMessages().insertPaperHere));
+        glassMeta.getPersistentDataContainer().set(Key.ACTION, PersistentDataType.STRING, "ADD_MEDAL");
         glass.setItemMeta(glassMeta);
         for (int i = 0; i < 9; i++) {
             inventory.setItem(i, glass.clone());
@@ -91,14 +94,14 @@ public class PrizeMenu extends ParaInventory {
     private void addPrize(ItemStack item, int slot, int price) {
         final ItemMeta meta = item.getItemMeta();
         final ArrayList<Component> lore = new ArrayList<>();
-        lore.add(MiniMessage.miniMessage().deserialize("<gray>値段: <white>" + price + "枚"));
-        lore.add(MiniMessage.miniMessage().deserialize("<gray>所持枚数: <white>" + medal + "枚"));
+        lore.add(MiniMessage.miniMessage().deserialize(SlotMachine.getMessages().prizePrice, TagResolver.builder().tag("price", Tag.inserting(Component.text(price))).build()));
+        lore.add(MiniMessage.miniMessage().deserialize(SlotMachine.getMessages().medalCount, TagResolver.builder().tag("medal", Tag.inserting(Component.text(medal))).build()));
         lore.add(Component.empty());
         if (meta.hasLore()) lore.addAll(meta.lore());
         meta.lore(lore);
 
-        meta.getPersistentDataContainer().set(SlotRegistry.Key.PRICE, PersistentDataType.INTEGER, price);
-        meta.getPersistentDataContainer().set(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "PURCHASE");
+        meta.getPersistentDataContainer().set(Key.PRICE, PersistentDataType.INTEGER, price);
+        meta.getPersistentDataContainer().set(Key.ACTION, PersistentDataType.STRING, "PURCHASE");
 
         item.setItemMeta(meta);
         final Inventory inventory = getInventory();
@@ -118,11 +121,11 @@ public class PrizeMenu extends ParaInventory {
     public boolean buy(@NotNull final ItemStack item) {
         if (!item.hasItemMeta()) return false;
         final ItemMeta meta = item.getItemMeta();
-        if (!meta.getPersistentDataContainer().has(SlotRegistry.Key.ACTION, PersistentDataType.STRING)) return false;
-        String action = meta.getPersistentDataContainer().get(SlotRegistry.Key.ACTION, PersistentDataType.STRING);
+        if (!meta.getPersistentDataContainer().has(Key.ACTION, PersistentDataType.STRING)) return false;
+        String action = meta.getPersistentDataContainer().get(Key.ACTION, PersistentDataType.STRING);
         if (action == null || !action.equals("PURCHASE")) return false;
-        if (!meta.getPersistentDataContainer().has(SlotRegistry.Key.PRICE, PersistentDataType.INTEGER)) return false;
-        Integer price = meta.getPersistentDataContainer().get(SlotRegistry.Key.PRICE, PersistentDataType.INTEGER);
+        if (!meta.getPersistentDataContainer().has(Key.PRICE, PersistentDataType.INTEGER)) return false;
+        Integer price = meta.getPersistentDataContainer().get(Key.PRICE, PersistentDataType.INTEGER);
         price = price == null ? 0 : price;
         if (price > medal) return false;
         setMedal(medal - price);
@@ -140,6 +143,6 @@ public class PrizeMenu extends ParaInventory {
 
     public void close(HumanEntity player) {
         MedalBank.addMedal(player.getUniqueId(), medal);
-        player.sendPlainMessage("現在の残高：" + medal + "枚");
+        player.sendMessage(MiniMessage.miniMessage().deserialize(SlotMachine.getMessages().medalCount, TagResolver.builder().tag("medal", Tag.inserting(Component.text(medal))).build()));
     }
 }

@@ -11,15 +11,16 @@ import dev.cerus.maps.api.graphics.MapGraphics;
 import dev.cerus.maps.plugin.map.MapScreenRegistry;
 import dev.cerus.maps.util.Vec2;
 import dev.cerus.maps.version.VersionAdapterFactory;
+import lombok.Setter;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentBuilder;
 import net.kyori.adventure.text.format.TextColor;
 import net.milkbowl.vault.economy.EconomyResponse;
 import net.sabafly.slotmachine.SlotMachine;
-import net.sabafly.slotmachine.game.slot.AssetImage;
-import net.sabafly.slotmachine.game.slot.SlotRegistry;
-import net.sabafly.slotmachine.game.slot.SlotRegistry.*;
+import net.sabafly.slotmachine.v2.game.slot.*;
+import net.sabafly.slotmachine.v2.game.slot.SlotRegistry.*;
+import net.sabafly.slotmachine.v2.game.slot.SlotRegistry.LegacyFlag;
 import net.sabafly.slotmachine.song.Song;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -49,6 +50,7 @@ import java.util.random.RandomGenerator;
 public class Slot extends ParaMachine {
     private final Wheels wheels;
     private final String wheelSet;
+    @Setter
     private Status status = Status.IDLE;
     private boolean isDebug = false;
     private Vec2 lastClickedPos = null;
@@ -97,7 +99,7 @@ public class Slot extends ParaMachine {
     }
 
     public void nextFlag() {
-        ram.estFlag = Flag.values()[(ram.estFlag == null ? 0 : ram.estFlag.ordinal() + 1) % Flag.values().length];
+        ram.estFlag = LegacyFlag.values()[(ram.estFlag == null ? 0 : ram.estFlag.ordinal() + 1) % LegacyFlag.values().length];
     }
 
     public void nextSetting() {
@@ -117,10 +119,10 @@ public class Slot extends ParaMachine {
     public static class RamData {
         public long coin = 0L;
         public long payOut = 0;
-        public Flag estFlag = null;
+        public LegacyFlag estFlag = null;
         public long gameCount = 0;
         public int bonusCoinCount = 0;
-        public Flag bonusFlag = null;
+        public LegacyFlag bonusFlag = null;
         public boolean bonusAnnounced = false;
         public boolean replay;
     }
@@ -191,10 +193,6 @@ public class Slot extends ParaMachine {
         itemFrame.remove();
 
         return new Slot(wheelSet, settings, screen);
-    }
-
-    public void setStatus(Status status) {
-        this.status = status;
     }
 
     public void toggleDebug() {
@@ -316,8 +314,7 @@ public class Slot extends ParaMachine {
                 if (response.transactionSuccess()) {
                     ComponentBuilder<?, ?> c =
                             Component.text().append(
-                                    Component.text("メダル貸出"),
-                                    Component.newline(),
+                                    Component.text("メダル貸出"), Component.newline(),
                                     Component.text("残高: " + SlotMachine.getEconomy().format(response.balance))
                             );
                     player.sendMessage(c);
@@ -327,8 +324,7 @@ public class Slot extends ParaMachine {
                 } else {
                     player.sendMessage(
                             Component.text().color(TextColor.color(0xf72424)).append(
-                                    Component.text("手続きが完了しませんでした"),
-                                    Component.newline(),
+                                    Component.text("手続きが完了しませんでした"), Component.newline(),
                                     Component.text("残高不足: " + SlotMachine.getEconomy().format(response.balance))
                             )
                     );
@@ -340,10 +336,8 @@ public class Slot extends ParaMachine {
                 this.stats.totalPayOut += this.ram.coin;
                 player.sendMessage(
                         Component.text().append(
-                                Component.text("メダル払い出し"),
-                                Component.newline(),
-                                Component.text("総ゲーム数: " + ram.gameCount),
-                                Component.newline(),
+                                Component.text("メダル払い出し"), Component.newline(),
+                                Component.text("総ゲーム数: " + ram.gameCount), Component.newline(),
                                 Component.text("総メダル数: " + ram.coin)
                         )
                 );
@@ -357,16 +351,14 @@ public class Slot extends ParaMachine {
                     this.ram.payOut += SlotMachine.getPluginConfig().lend.count;
                     player.sendMessage(
                             Component.text().append(
-                                    Component.text("貯メダルからメダルを引き出しました"),
-                                    Component.newline(),
+                                    Component.text("貯メダルからメダルを引き出しました"), Component.newline(),
                                     Component.text("残高: " + MedalBank.getMedal(player.getUniqueId()))
                             )
                     );
                 } else {
                     player.sendMessage(
                             Component.text().color(TextColor.color(0xf72424)).append(
-                                    Component.text("貯メダルが足りないか、今日の上限に達しています"),
-                                    Component.newline(),
+                                    Component.text("貯メダルが足りないか、今日の上限に達しています"), Component.newline(),
                                     Component.text("貯メダル: " + MedalBank.getMedal(player.getUniqueId()))
                             )
                     );
@@ -390,7 +382,7 @@ public class Slot extends ParaMachine {
         return this.uuid + ".yml";
     }
 
-    public Flag getFlag() {
+    public LegacyFlag getFlag() {
         return ram.estFlag;
     }
 
@@ -449,7 +441,7 @@ public class Slot extends ParaMachine {
 
         final Wheel[] wheels;
         Line highlightLine;
-        Flag highlightFlag;
+        LegacyFlag highlightFlag;
         boolean waiting;
 
         public Wheels(WheelSet wheelSet) {
@@ -539,20 +531,20 @@ public class Slot extends ParaMachine {
             return Arrays.stream(wheels).allMatch(Wheel::isStopped);
         }
 
-        private Flag getFlagShifted(Pos pos, int shift) {
+        private LegacyFlag getFlagShifted(Pos pos, int shift) {
             int left = getWheel(Pos.LEFT).getLength() + (pos == Pos.LEFT ? shift : 0);
             int center = getWheel(Pos.CENTER).getLength() + (pos == Pos.CENTER ? shift : 0);
             int right = getWheel(Pos.RIGHT).getLength() + (pos == Pos.RIGHT ? shift : 0);
             return getFlag(left, center, right);
         }
 
-        public Flag getFlag() {
+        public LegacyFlag getFlag() {
             return getFlag(0, 0, 0);
         }
 
-        public Flag getFlag(int left, int center, int right) {
+        public LegacyFlag getFlag(int left, int center, int right) {
             for (Line line : Line.values()) {
-                final Flag f = Flag.getFlag(getWheel(Pos.LEFT).getPattern(line.get(Pos.LEFT) + left), getWheel(Pos.CENTER).getPattern(line.get(Pos.CENTER) + center), getWheel(Pos.RIGHT).getPattern(line.get(Pos.RIGHT) + right));
+                final LegacyFlag f = LegacyFlag.getFlag(getWheel(Pos.LEFT).getPattern(line.get(Pos.LEFT) + left), getWheel(Pos.CENTER).getPattern(line.get(Pos.CENTER) + center), getWheel(Pos.RIGHT).getPattern(line.get(Pos.RIGHT) + right));
                 if (f != null) {
                     return f;
                 }
@@ -560,7 +552,7 @@ public class Slot extends ParaMachine {
             return null;
         }
 
-        private int getStepCount(Flag flag, Pos pos) {
+        private int getStepCount(LegacyFlag flag, Pos pos) {
             Wheel wheel = getWheel(pos);
             if (flag != null) {
                 for (int i = 0; i < wheel.getPatterns().length - 2; i++) {
@@ -611,7 +603,7 @@ public class Slot extends ParaMachine {
                             case 2 -> {
                                 if (pos == Pos.LEFT && Arrays.stream(wheel.getPatterns()).skip(i).limit(3).anyMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
                                     continue;
-                                Flag f = getFlagShifted(pos, i);
+                                LegacyFlag f = getFlagShifted(pos, i);
                                 if (f == flag) return i;
                             }
                         }
@@ -621,7 +613,7 @@ public class Slot extends ParaMachine {
             // はずれる処理
             if (stoppedWheels() == 2) {
                 for (int i = 0; i < wheel.getLength() - 2; i++) {
-                    Flag f = getFlagShifted(pos, i);
+                    LegacyFlag f = getFlagShifted(pos, i);
                     if (f == null) return i;
                 }
             } else {
@@ -631,21 +623,21 @@ public class Slot extends ParaMachine {
                     else if (Arrays.stream(wheel.getPatterns())
                             .skip(i)
                             .limit(3)
-                            .noneMatch(wheelPattern -> wheelPattern == SlotRegistry.WheelPattern.CHERRY))
+                            .noneMatch(wheelPattern -> wheelPattern == WheelPattern.CHERRY))
                         return i;
                 }
             }
             return 0;
         }
 
-        public void stop(@NotNull  Pos pos, @Nullable Flag estFlag) {
+        public void stop(@NotNull  Pos pos, @Nullable SlotRegistry.LegacyFlag estFlag) {
             int stepCount = getStepCount(estFlag, pos);
             getWheel(pos).stop(stepCount);
             if (isStopped()) {
                 this.highlightLine = null;
                 this.highlightFlag = null;
                 setStatus(Status.IDLE);
-                Flag flag = this.getFlag();
+                LegacyFlag flag = this.getFlag();
 
                 if (!ram.bonusAnnounced && estFlag != null && estFlag.isBonus()) {
                     announceBonus(estFlag);
@@ -662,12 +654,12 @@ public class Slot extends ParaMachine {
                     String key = "sound" + ThreadLocalRandom.current().nextInt();
                     TaskChain<?> chain = SlotMachine.newSharedChain(key);
 
-                    if (flag == SlotRegistry.Flag.F_REPLAY) {
+                    if (flag == LegacyFlag.F_REPLAY) {
                         Song.REPLAY.play(screen.getLocation(), chain);
                         ram.replay = true;
                     }
 
-                    if (flag == SlotRegistry.Flag.F_GRAPE) Song.GRAPE.play(screen.getLocation(), chain);
+                    if (flag == LegacyFlag.F_GRAPE) Song.GRAPE.play(screen.getLocation(), chain);
 
                     ram.estFlag = null;
                     ram.payOut += estFlag.getCoin();
@@ -697,19 +689,21 @@ public class Slot extends ParaMachine {
             }
         }
 
-        private void announceBonus(Flag estFlag) {
+        private void announceBonus(LegacyFlag estFlag) {
             ram.bonusAnnounced = true;
             estFlag.withoutCherry();
         }
 
-        private Line getFlagLine(Flag flag) {
+        private Line getFlagLine(LegacyFlag flag) {
             for (Line line : Line.values()) {
-                if (Flag.getFlag(getWheel(Pos.LEFT).getPattern(line.get(Pos.LEFT)), getWheel(Pos.CENTER).getPattern(line.get(Pos.CENTER)), getWheel(Pos.RIGHT).getPattern(line.get(Pos.RIGHT))) == flag) {
+                if (LegacyFlag.getFlag(getWheel(Pos.LEFT).getPattern(line.get(Pos.LEFT)), getWheel(Pos.CENTER).getPattern(line.get(Pos.CENTER)), getWheel(Pos.RIGHT).getPattern(line.get(Pos.RIGHT))) == flag) {
                     return line;
                 }
             }
             return null;
         }
+
+        private final long cooldown = 0;
 
         public void start() {
             if (waiting) return;
@@ -723,7 +717,7 @@ public class Slot extends ParaMachine {
             ram.gameCount++;
             ram.replay = false;
             if (ram.estFlag == null || !ram.estFlag.isBonus())
-                ram.estFlag = Flag.genFlag(random, isBonusNow() ? Setting.Bonus : settings.get(settingId));
+                ram.estFlag = LegacyFlag.genFlag(random, isBonusNow() ? Setting.Bonus : settings.get(settingId));
             if (!ram.bonusAnnounced && ram.estFlag != null && ram.estFlag.isBonus() && ram.estFlag.isEarlyAnnounce()) {
                 announceBonus(ram.estFlag);
             }
@@ -738,6 +732,10 @@ public class Slot extends ParaMachine {
                 waiting = false;
             }).execute();
         }
+    }
+
+    public Type type() {
+        return Type.SLOT;
     }
 
     public class BgmTask implements TaskChainTasks.GenericTask {

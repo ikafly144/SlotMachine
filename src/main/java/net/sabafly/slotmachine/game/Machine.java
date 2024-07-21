@@ -5,6 +5,7 @@ import dev.cerus.maps.api.graphics.MapGraphics;
 import dev.cerus.maps.plugin.map.MapScreenRegistry;
 import dev.cerus.maps.util.Vec2;
 import net.sabafly.slotmachine.SlotMachine;
+import net.sabafly.slotmachine.v2.game.slot.juggler.JugglerSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.spongepowered.configurate.CommentedConfigurationNode;
@@ -87,14 +88,19 @@ public interface Machine<T extends Machine<T>> extends Runnable, UI {
         if (type == null) throw new IllegalArgumentException("type is null");
         Machine<?> machine = switch (type) {
             case SLOT -> Slot.load(node, UUID.fromString(file.getName().replace(".yml", "")));
+            case JUGGLER -> JugglerSlot.load(node, UUID.fromString(file.getName().replace(".yml", "")));
         };
         return machine;
     }
 
     String filename();
 
+    Type type();
+
     enum Type {
+        @Deprecated
         SLOT,
+        JUGGLER,
     }
 
 }

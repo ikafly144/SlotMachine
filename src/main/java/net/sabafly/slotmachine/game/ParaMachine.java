@@ -12,8 +12,7 @@ import java.util.UUID;
 
 public abstract class ParaMachine implements Machine<ParaMachine> {
 
-    long tick = 0;
-    long cooldown = 0;
+    protected long tick = 0;
     final MapScreen screen;
     final UUID uuid;
 

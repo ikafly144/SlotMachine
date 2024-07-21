@@ -1,5 +1,6 @@
 package net.sabafly.slotmachine.game;
 
+import lombok.Getter;
 import net.sabafly.slotmachine.SlotMachine;
 import net.sabafly.slotmachine.configuration.Medals;
 import org.bukkit.entity.HumanEntity;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class MedalBank {
+    @Getter
     static Map<UUID, Long> medalMap = new HashMap<>();
     static LocalDate lastTakeMedalDay = LocalDate.now();
     static Map<UUID, Long> medalTakeMap = new HashMap<>();
@@ -83,10 +85,6 @@ public class MedalBank {
         if (m < medal) return false;
         Long p = medalTakeMap.getOrDefault(player, 0L);
         return p + medal < SlotMachine.getPluginConfig().lend.savedMedalMaxUsePerDay;
-    }
-
-    public static Map<UUID, Long> getMedalMap() {
-        return medalMap;
     }
 
     public static void removeMedal(UUID target, long amount) {

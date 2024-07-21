@@ -10,9 +10,7 @@ import net.kyori.adventure.text.Component;
 import net.sabafly.slotmachine.game.Machine;
 import net.sabafly.slotmachine.game.ScreenManager;
 import net.sabafly.slotmachine.game.Slot;
-import net.sabafly.slotmachine.game.slot.SlotRegistry;
-import net.sabafly.slotmachine.game.slot.SlotRegistry.SettingSet;
-import net.sabafly.slotmachine.game.slot.SlotRegistry.WheelSet;
+import net.sabafly.slotmachine.v2.game.slot.juggler.JugglerSlot;
 import net.sabafly.slotmachine.inventory.ConfigMenu;
 import net.sabafly.slotmachine.inventory.ExchangeMenu;
 import net.sabafly.slotmachine.inventory.PrizeMenu;
@@ -97,13 +95,14 @@ public class EventListener implements Listener {
             ItemMeta clickedMeta = clicked.getItemMeta();
             if (clickedMeta == null) return;
 
-            String action = clickedMeta.getPersistentDataContainer().getOrDefault(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "NONE");
+            String action = clickedMeta.getPersistentDataContainer().getOrDefault(net.sabafly.slotmachine.v2.game.slot.Key.ACTION, PersistentDataType.STRING, "NONE");
 
-            if (action.equals("CREATE")) {
+            if (action.equals("CREATE") && configMenu.getEntity() != null) {
                 HumanEntity clickedEntity = event.getWhoClicked();
                 clickedEntity.sendPlainMessage("created");
                 clickedEntity.closeInventory();
-                Slot slot = Slot.create(configMenu.getEntity(), WheelSet.JUGGLER, SettingSet.JUGGLER);
+                JugglerSlot slot = JugglerSlot.create(configMenu.getEntity());
+//                Slot slot = Slot.create(configMenu.getEntity(), WheelSet.JUGGLER, SettingSet.JUGGLER);
                 ScreenManager.registerMachine(slot, Bukkit.getScheduler());
                 return;
             }
@@ -144,7 +143,7 @@ public class EventListener implements Listener {
             if (clicked == null) return;
             ItemMeta clickedMeta = clicked.getItemMeta();
             if (clickedMeta == null) return;
-            String action = clickedMeta.getPersistentDataContainer().getOrDefault(SlotRegistry.Key.ACTION, PersistentDataType.STRING, "NONE");
+            String action = clickedMeta.getPersistentDataContainer().getOrDefault(net.sabafly.slotmachine.v2.game.slot.Key.ACTION, PersistentDataType.STRING, "NONE");
             HumanEntity player = event.getWhoClicked();
 
             switch (action) {
@@ -160,17 +159,17 @@ public class EventListener implements Listener {
                     ItemStack cursor = event.getCursor();
                     ItemMeta cursorMeta = cursor.getItemMeta();
                     if (cursorMeta == null) return;
-                    String type = cursorMeta.getPersistentDataContainer().get(SlotRegistry.Key.TYPE, PersistentDataType.STRING);
+                    String type = cursorMeta.getPersistentDataContainer().get(net.sabafly.slotmachine.v2.game.slot.Key.TYPE, PersistentDataType.STRING);
                     if (type == null || !type.equals("TICKET")) return;
-                    String date = cursorMeta.getPersistentDataContainer().get(SlotRegistry.Key.DATE, PersistentDataType.STRING);
+                    String date = cursorMeta.getPersistentDataContainer().get(net.sabafly.slotmachine.v2.game.slot.Key.DATE, PersistentDataType.STRING);
                     if (date == null) return;
                     if (!date.equals(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE))) {
-                        Long unixTime = cursorMeta.getPersistentDataContainer().get(SlotRegistry.Key.UNIX_TIME, PersistentDataType.LONG);
+                        Long unixTime = cursorMeta.getPersistentDataContainer().get(net.sabafly.slotmachine.v2.game.slot.Key.UNIX_TIME, PersistentDataType.LONG);
                         if (unixTime == null) return;
                         // 三時間以内かどうか
                         if (unixTime + 60 * 60 * 3 < System.currentTimeMillis() / 1000) return;
                     }
-                    Long coin = cursorMeta.getPersistentDataContainer().get(SlotRegistry.Key.COIN, PersistentDataType.LONG);
+                    Long coin = cursorMeta.getPersistentDataContainer().get(net.sabafly.slotmachine.v2.game.slot.Key.COIN, PersistentDataType.LONG);
                     if (coin == null) return;
                     prizeMenu.addMedal(coin);
 
@@ -215,13 +214,13 @@ public class EventListener implements Listener {
         lastClick.put(player.getUniqueId(), Bukkit.getCurrentTick());
         final MapScreen screen = event.getClickedScreen();
         Vec2 clickPos = event.getClickPos();
-        if (!(ScreenManager.getScreenMap().get(screen) instanceof Slot slot)) return;
+        if (!(ScreenManager.getScreenMap().get(screen) instanceof Machine<?> machine)) return;
 
         if (event.getPlayer().getInventory().getItemInMainHand().getType() == Material.BLAZE_ROD) {
             if (!player.hasPermission("slotmachine.admin")) return;
 
             event.setCancelled(true);
-            ConfigMenu menu = new ConfigMenu(this.plugin, slot);
+            ConfigMenu menu = new ConfigMenu(this.plugin, machine);
 
             SlotMachine.newChain().sync(() -> player.openInventory(menu.getInventory())).execute();
             return;
@@ -229,7 +228,7 @@ public class EventListener implements Listener {
 
         if (!event.isLeftClick()) return;
 
-        slot.onClick(player, clickPos);
+        machine.onClick(player, clickPos);
 
         event.setCancelled(true);
     }

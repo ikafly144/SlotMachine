@@ -1,0 +1,16 @@
+name: SlotMachine
+authors:
+  - ikafly144
+version: '${version}'
+main: net.sabafly.slotmachine.v2.SlotMachine
+bootstrapper: net.sabafly.slotmachine.v2.SlotMachineBootstrapper
+api-version: '1.21'
+load: STARTUP
+dependencies:
+  server:
+    Vault:
+      load: BEFORE
+      required: true
+    BKCommonLib:
+      load: BEFORE
+      required: true
