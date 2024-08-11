@@ -1,13 +1,7 @@
 plugins {
     id 'java'
-}
-
-plugins {
-    id 'com.github.johnrengelman.shadow' version '8.1.1'
-}
-
-plugins {
-    id("xyz.jpenilla.run-paper") version "2.2.2"
+    id("io.github.goooler.shadow") version "8.1.8"
+    id("xyz.jpenilla.run-paper") version "2.3.0"
 }
 
 group = 'net.sabafly'
@@ -34,8 +28,8 @@ repositories {
 
 dependencies {
     compileOnly "io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT"
-    compileOnly 'dev.cerus.maps:common:3.8.1'
-    compileOnly 'dev.cerus.maps:plugin:3.8.1'
+    compileOnly 'dev.cerus.maps:common:3.8.6'
+    compileOnly 'dev.cerus.maps:plugin:3.8.6'
     compileOnly "com.github.MilkBowl:VaultAPI:1.7.1"
     compileOnly 'org.geysermc.floodgate:api:2.2.2-SNAPSHOT'
     implementation 'me.lucko:commodore:2.2'
@@ -92,7 +86,7 @@ shadowJar {
 tasks {
     runServer {
         downloadPlugins {
-            github("cerus", "maps", "3.8.3", "maps-plugin.jar")
+            github("cerus", "maps", "3.8.6", "maps-plugin.jar")
             github("MilkBowl", "Vault", "1.7.3", "Vault.jar")
             url("https://api.spiget.org/v2/resources/71210/download")
             url("https://ci.dmulloy2.net/job/ProtocolLib//lastBuild/artifact/build/libs/ProtocolLib.jar")
