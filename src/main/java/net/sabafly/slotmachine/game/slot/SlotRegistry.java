@@ -417,7 +417,7 @@ public class SlotRegistry {
             meta.displayName(Component.text("特殊景品（大）"));
             meta.getPersistentDataContainer().set(Key.TYPE, PersistentDataType.STRING, "PAY_OUT");
             meta.getPersistentDataContainer().set(Key.SIZE, PersistentDataType.STRING, "LARGE");
-            meta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
+            meta.addEnchant(Enchantment.INFINITY, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             item.setItemMeta(meta);
             return item;
@@ -429,7 +429,7 @@ public class SlotRegistry {
             meta.displayName(Component.text("特殊景品（中）"));
             meta.getPersistentDataContainer().set(Key.TYPE, PersistentDataType.STRING, "PAY_OUT");
             meta.getPersistentDataContainer().set(Key.SIZE, PersistentDataType.STRING, "MEDIUM");
-            meta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
+            meta.addEnchant(Enchantment.INFINITY, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             item.setItemMeta(meta);
             return item;
@@ -441,7 +441,7 @@ public class SlotRegistry {
             meta.displayName(Component.text("特殊景品（小）"));
             meta.getPersistentDataContainer().set(Key.TYPE, PersistentDataType.STRING, "PAY_OUT");
             meta.getPersistentDataContainer().set(Key.SIZE, PersistentDataType.STRING, "SMALL");
-            meta.addEnchant(Enchantment.ARROW_INFINITE, 1, true);
+            meta.addEnchant(Enchantment.INFINITY, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             item.setItemMeta(meta);
             return item;
