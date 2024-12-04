@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Deprecated(forRemoval = true)
 public class MedalBank {
     @Getter
     static Map<UUID, Long> medalMap = new HashMap<>();

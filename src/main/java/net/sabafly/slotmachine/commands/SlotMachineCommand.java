@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 
+@Deprecated(forRemoval = true)
 public class SlotMachineCommand extends ParaCommand {
 
     public SlotMachineCommand(final @NotNull SlotMachine plugin) {
@@ -123,7 +124,7 @@ public class SlotMachineCommand extends ParaCommand {
                         sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Medal data saved"));
                         return;
                     }
-                    case "load" -> {
+                    case "createId" -> {
                         MedalBank.load(SlotMachine.getPlugin().getDataFolder());
                         sender.sendMessage(MiniMessage.miniMessage().deserialize("<red><bold>SlotMachine <gray>- <white>Medal data loaded"));
                         return;
@@ -268,7 +269,7 @@ public class SlotMachineCommand extends ParaCommand {
                         .then(LiteralArgumentBuilder
                                 .literal("save"))
                         .then(LiteralArgumentBuilder
-                                .literal("load"))
+                                .literal("createId"))
                 )
                 .then(LiteralArgumentBuilder.
                         literal("rng")

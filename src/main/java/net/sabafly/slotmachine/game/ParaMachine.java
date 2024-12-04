@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+@Deprecated(forRemoval = true)
 public abstract class ParaMachine implements Machine<ParaMachine> {
 
     protected long tick = 0;

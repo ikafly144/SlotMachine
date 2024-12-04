@@ -5,7 +5,7 @@ import dev.cerus.maps.api.graphics.MapGraphics;
 import dev.cerus.maps.plugin.map.MapScreenRegistry;
 import dev.cerus.maps.util.Vec2;
 import net.sabafly.slotmachine.SlotMachine;
-import net.sabafly.slotmachine.v2.game.slot.juggler.JugglerSlot;
+import net.sabafly.slotmachine.v2.game.legacy.juggler.JugglerSlot;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.spongepowered.configurate.CommentedConfigurationNode;
@@ -19,14 +19,15 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import java.io.File;
 import java.util.*;
 
+@Deprecated(forRemoval = true)
 public interface Machine<T extends Machine<T>> extends Runnable, UI {
     void save(final ConfigurationLoader<? extends  ConfigurationNode> loader) throws ConfigurateException;
 
     UUID getUniqueId();
 
     MapScreen getScreen();
-    
-    default void onClick(Player clicked,Vec2 pos) {
+
+    default void onClick(Player clicked, Vec2 pos) {
         List<UIButton> buttons = this.getButtons();
         if (buttons != null) {
             for (UIButton button : buttons) {

@@ -6,13 +6,14 @@ import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.milkbowl.vault.economy.Economy;
 import net.sabafly.slotmachine.SlotMachine;
-import net.sabafly.slotmachine.v2.game.slot.Key;
+import net.sabafly.slotmachine.v2.game.legacy.Key;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Deprecated(forRemoval = true)
 public class ExchangeMenu extends ParaInventory {
     private final Player player;
     public ExchangeMenu(Player player) {

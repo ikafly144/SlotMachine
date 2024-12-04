@@ -7,8 +7,8 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import net.sabafly.slotmachine.SlotMachine;
 import net.sabafly.slotmachine.configuration.Configurations;
 import net.sabafly.slotmachine.game.MedalBank;
-import net.sabafly.slotmachine.v2.game.slot.Key;
-import net.sabafly.slotmachine.v2.game.slot.SlotRegistry;
+import net.sabafly.slotmachine.v2.game.legacy.Key;
+import net.sabafly.slotmachine.v2.game.legacy.SlotRegistry;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
+@Deprecated(forRemoval = true)
 public class PrizeMenu extends ParaInventory {
     private int page;
     private long medal;

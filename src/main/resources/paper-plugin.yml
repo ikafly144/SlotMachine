@@ -2,8 +2,9 @@ name: SlotMachine
 authors:
   - ikafly144
 version: '${version}'
+description: SlotMachine plugin for Minecraft
+website: "https://github.com/ikafly144/SlotMachine"
 main: net.sabafly.slotmachine.v2.SlotMachine
-bootstrapper: net.sabafly.slotmachine.v2.SlotMachineBootstrapper
 api-version: '1.21'
 load: STARTUP
 dependencies:
@@ -11,6 +12,9 @@ dependencies:
     Vault:
       load: BEFORE
       required: true
-    BKCommonLib:
+    maps:
       load: BEFORE
       required: true
+    floodgate:
+      load: BEFORE
+      required: false

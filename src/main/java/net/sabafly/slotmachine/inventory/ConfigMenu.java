@@ -3,7 +3,7 @@ package net.sabafly.slotmachine.inventory;
 import net.kyori.adventure.text.Component;
 import net.sabafly.slotmachine.game.Machine;
 import net.sabafly.slotmachine.game.Slot;
-import net.sabafly.slotmachine.v2.game.slot.Key;
+import net.sabafly.slotmachine.v2.game.legacy.Key;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.Inventory;
@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 
+@Deprecated(forRemoval = true)
 public class ConfigMenu extends ParaInventory {
 
     private final Entity entity;

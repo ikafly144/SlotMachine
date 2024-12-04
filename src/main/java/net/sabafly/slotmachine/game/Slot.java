@@ -18,10 +18,10 @@ import net.kyori.adventure.text.ComponentBuilder;
 import net.kyori.adventure.text.format.TextColor;
 import net.milkbowl.vault.economy.EconomyResponse;
 import net.sabafly.slotmachine.SlotMachine;
-import net.sabafly.slotmachine.v2.game.slot.*;
-import net.sabafly.slotmachine.v2.game.slot.SlotRegistry.*;
-import net.sabafly.slotmachine.v2.game.slot.SlotRegistry.LegacyFlag;
-import net.sabafly.slotmachine.song.Song;
+import net.sabafly.slotmachine.v2.game.legacy.*;
+import net.sabafly.slotmachine.v2.game.legacy.SlotRegistry.*;
+import net.sabafly.slotmachine.v2.game.legacy.SlotRegistry.LegacyFlag;
+import net.sabafly.slotmachine.v2.song.Song;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
@@ -47,6 +47,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.random.RandomGenerator;
 
+@Deprecated(forRemoval = true)
 public class Slot extends ParaMachine {
     private final Wheels wheels;
     private final String wheelSet;

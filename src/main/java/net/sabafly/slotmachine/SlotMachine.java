@@ -25,6 +25,7 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import java.io.File;
 import java.util.logging.Logger;
 
+@Deprecated(forRemoval = true)
 public final class SlotMachine extends JavaPlugin {
 
     private final Logger logger = getLogger();
@@ -55,7 +56,7 @@ public final class SlotMachine extends JavaPlugin {
             reloadPluginConfig();
             MedalBank.load(getDataFolder());
         } catch (ConfigurateException e) {
-            logger.severe("failed to load config");
+            logger.severe("failed to createId config");
             e.printStackTrace();
             this.getServer().getPluginManager().disablePlugin(this);
             return;

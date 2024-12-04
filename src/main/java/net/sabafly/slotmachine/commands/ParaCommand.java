@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
+@Deprecated
 public abstract class ParaCommand implements CommandExecutor, TabCompleter {
 
     public ParaCommand(@NotNull final SlotMachine plugin, @NotNull final String name, String... alias) {

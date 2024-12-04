@@ -7,6 +7,7 @@ import net.sabafly.slotmachine.SlotMachine;
 import org.bukkit.command.PluginCommand;
 import org.jetbrains.annotations.NotNull;
 
+@Deprecated(forRemoval = true)
 public class CommodoreHandler {
 
     private final SlotMachine plugin;

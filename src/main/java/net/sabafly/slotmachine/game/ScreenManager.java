@@ -17,6 +17,7 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 import java.io.File;
 import java.util.*;
 
+@Deprecated(forRemoval = true)
 public class ScreenManager implements Listener {
 
     public static final double MAX_DIST = Math.pow(48, 2);
